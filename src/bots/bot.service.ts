@@ -41,10 +41,6 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     private async setupWebhook(): Promise<void> {
-        if (!this.config.webhookUrl) {
-            throw new Error('Webhook URL is missing in configuration.');
-        }
-
         await this.bot.setWebHook(this.config.webhookUrl, {
             allowed_updates: ['message', 'callback_query', 'my_chat_member'],
         });
