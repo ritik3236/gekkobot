@@ -11,6 +11,8 @@ export async function POST(req: NextRequest) {
     const token = req.headers.get('x-telegram-bot-api-secret-token');
 
     if (token !== process.env.TELEGRAM_SECRET_TOKEN) {
+        console.log('Unauthorized', token, process.env.TELEGRAM_SECRET_TOKEN);
+
         return NextResponse.json(
             { error: 'Unauthorized' },
             { status: 401 }
