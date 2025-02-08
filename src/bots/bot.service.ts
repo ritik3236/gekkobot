@@ -1,0 +1,249 @@
+import { EventEmitter } from 'events';
+
+import TelegramBot from 'node-telegram-bot-api';
+
+import { BotConfig, BotService } from '@/lib/types';
+
+class Logger {
+    static error(context: string, error: unknown, metadata: Record<string, unknown>, botName: string): void {
+        console.error(`[${new Date().toISOString()}] ERROR [${context}] [${botName}]`, error, metadata);
+    }
+
+    static info(context: string, message: string, botName: string): void {
+        console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message);
+    }
+}
+
+export abstract class BaseTelegramBotService extends EventEmitter {
+    protected readonly bot: TelegramBot;
+    protected readonly config: BotConfig;
+    private botUsername: string | null = null;
+    protected commandHandlers: Record<string, { desc: string, cmd: (msg: TelegramBot.Message) => Promise<void> }> = {};
+    protected services: BotService[] = [];
+
+    protected constructor(config: BotConfig) {
+        super();
+        this.config = config;
+        this.bot = new TelegramBot(config.token, { polling: config.polling || false });
+    }
+
+    public async initialize(): Promise<void> {
+        if (process.env.NODE_ENV === 'production' && this.config.webhookUrl) {
+            await this.setupWebhook();
+        }
+
+        await this.registerCommands();
+        this.setupListeners();
+        this.errorListeners();
+        this.services.forEach((service) => service.start());
+
+        Logger.info('INIT', 'Bot initialized 🚀', this.config.botName);
+    }
+
+    private async setupWebhook(): Promise<void> {
+        if (!this.config.webhookUrl) {
+            throw new Error('Webhook URL is missing in configuration.');
+        }
+
+        await this.bot.setWebHook(this.config.webhookUrl, {
+            allowed_updates: ['message', 'callback_query', 'my_chat_member'],
+        });
+        Logger.info('WEBHOOK', `Webhook set to ${this.config.webhookUrl}`, this.config.botName);
+    }
+
+    private async registerCommands(): Promise<void> {
+        const commands = Object.keys(this.commandHandlers).map((command) => ({
+            command,
+            description: this.commandHandlers[command].desc,
+        }));
+
+        await this.bot.setMyCommands(commands);
+        Logger.info('COMMANDS', `Registered ${commands.length} commands`, this.config.botName);
+    }
+
+    private setupListeners(): void {
+        // Handle bot being added/removed from chats
+        this.bot.on('my_chat_member', async (msg) => {
+            const chat = msg.chat;
+            const status = msg.new_chat_member?.status;
+
+            if (status === 'member' || status === 'administrator') {
+                await this.handleBotAddedToChat(chat);
+            } else if (status === 'kicked' || status === 'left') {
+                await this.handleBotRemovedFromChat(chat);
+            }
+        });
+
+        // Handle regular messages
+        this.bot.on('message', async (msg) => {
+            if (!this.isAllowedChat(msg.chat.id)) {
+                await this.notifyUnauthorizedChat(msg.chat.id);
+
+                return;
+            }
+
+            console.info(msg);
+
+            await this.processCommand(msg);
+        });
+    }
+
+    private errorListeners(): void {
+        this.bot.on('error', (error) => {
+            Logger.error('BOT_ERROR', error, {}, this.config.botName);
+            this.emit('error', error);
+        });
+    }
+
+    private isAllowedChat(chatId: number): boolean {
+        return this.config.chatIds.includes(chatId);
+    }
+
+    private async getBotUsername(): Promise<string> {
+        if (!this.botUsername) {
+            this.botUsername = (await this.bot.getMe()).username;
+        }
+
+        return this.botUsername;
+    }
+
+    private async notifyUnauthorizedChat(chatId: number): Promise<void> {
+        await this.safeSendMessage(
+            chatId,
+            '❌ This bot is not allowed in this chat.',
+            'UNAUTHORIZED_ACCESS'
+        );
+    }
+
+    private async processCommand(msg: TelegramBot.Message): Promise<void> {
+        const text = msg.text?.trim();
+
+        if (!text) {
+            Logger.info('EMPTY_MESSAGE', 'Received an empty message.', this.config.botName);
+
+            return;
+        }
+
+        // Extract command and bot username (if mentioned)
+        const commandMatch = text.match(/^\/(\w+)(?:@(\S+))?/);
+
+        if (!commandMatch) {
+            Logger.info('INVALID_COMMAND', `Received an invalid command format: ${text}`, this.config.botName);
+
+            return;
+        }
+
+        let [, command, mentionedBot] = commandMatch;
+
+        command = `/${command}`.toLowerCase();
+
+        // Ignore if the command is for another bot
+        if (mentionedBot && mentionedBot !== await this.getBotUsername()) {
+            Logger.info('COMMAND_FOR_OTHER_BOT', `Command intended for another bot: ${text}`, this.config.botName);
+
+            return;
+        }
+
+        // Find and execute the command handler
+        const handler = this.commandHandlers[command];
+
+        if (!handler) {
+            Logger.info('UNKNOWN_COMMAND', `Unknown command received: ${command}`, this.config.botName);
+
+            return;
+        }
+
+        try {
+            await handler.cmd(msg);
+        } catch (error) {
+            Logger.error('COMMAND_EXECUTION_ERROR', `Error executing command: ${command}`, { error }, this.config.botName);
+            await this.handleCommandError(msg.chat.id, command, error);
+        }
+    }
+
+    private async handleCommandError(chatId: number, command: string, error: unknown): Promise<void> {
+        Logger.error(`COMMAND_${command.toUpperCase()}`, error, {}, this.config.botName);
+        await this.safeSendMessage(
+            chatId,
+            '⚠️ An error occurred while processing your request.',
+            'COMMAND_ERROR'
+        );
+    }
+
+    private async safeSendMessage(
+        chatId: number,
+        message: string,
+        context: string
+    ): Promise<void> {
+        try {
+            await this.bot.sendMessage(chatId, message);
+            Logger.info(context, `Message sent to ${chatId}`, this.config.botName);
+        } catch (error) {
+            Logger.error(context, error, { chatId, message }, this.config.botName);
+        }
+    }
+
+    private async handleBotAddedToChat(chat: TelegramBot.Chat): Promise<void> {
+        const chatDetails = {
+            type: chat.type,
+            title: chat.title || 'Untitled Chat',
+            id: chat.id,
+            username: chat.username || 'N/A',
+        };
+
+        Logger.info('BOT_ADDED', `Bot added to chat: ${JSON.stringify(chatDetails)}`, this.config.botName);
+
+        // Send welcome message to the chat
+        await this.safeSendMessage(
+            chat.id,
+            '👋 Hello! Thanks for adding me to this chat. Use /help to see what I can do.',
+            'BOT_ADDED_WELCOME'
+        );
+
+        // Notify admin with JSON string
+        const adminMessage = JSON.stringify({
+            event: 'bot_added',
+            chat: chatDetails,
+        }, null, 2);
+
+        await this.safeSendMessage(
+            this.config.adminChatId,
+            adminMessage,
+            'BOT_ADDED_NOTIFICATION'
+        );
+    }
+
+    private async handleBotRemovedFromChat(chat: TelegramBot.Chat): Promise<void> {
+        const chatDetails = {
+            type: chat.type,
+            title: chat.title || 'Untitled Chat',
+            id: chat.id,
+            username: chat.username || 'N/A',
+        };
+
+        Logger.info('BOT_REMOVED', `Bot removed from chat: ${JSON.stringify(chatDetails)}`, this.config.botName);
+
+        // Notify admin with JSON string
+        const adminMessage = JSON.stringify({
+            event: 'bot_removed',
+            chat: chatDetails,
+        }, null, 2);
+
+        await this.safeSendMessage(
+            this.config.adminChatId,
+            adminMessage,
+            'BOT_REMOVED_NOTIFICATION'
+        );
+    }
+
+    public addCommand(command: string, handler: {
+        desc: string,
+        cmd: (msg: TelegramBot.Message) => Promise<void>
+    }): void {
+        this.commandHandlers[command] = handler;
+    }
+
+    public addService(service: BotService): void {
+        this.services.push(service);
+    }
+}
