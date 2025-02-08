@@ -1,20 +1,20 @@
 import { BotConfig } from '@/lib/types';
 
-export const botsConfig: BotConfig[] = [
+export const botsConfigs: BotConfig[] = [
     {
-        adminChatId: +process.env.ADMIN_CHAT_ID,
+        adminChatId: +process.env.TELEGRAM_ADMIN_CHAT_ID,
         botName: 'PayoutX',
         chatIds: [-4644489581, 1282110140, 987654321],
         polling: false,
-        token: '8075096031:AAF9Evf1iraySnxV6-6zc-fNIWhZ8JLFuOk',
-        webhookUrl: 'https://gekkobot-delta.vercel.app/api/telegram',
+        token: process.env.TELEGRAM_BOT_TOKEN_XBOT,
+        webhookUrl: 'https://gekkobot-delta.vercel.app/api/telegram/xbot',
     },
     {
-        adminChatId: +process.env.ADMIN_CHAT_ID,
+        adminChatId: +process.env.TELEGRAM_ADMIN_CHAT_ID,
         botName: 'Mezu',
         chatIds: [-4644489581, 1282110140, 444555666],
         polling: false,
-        token: '7834314818:AAFGm4-xyLTtmH6Lyx47y1pXXs-nEpifUt8',
-        webhookUrl: 'https://gekkobot-delta.vercel.app/api/telegram',
+        token: process.env.TELEGRAM_BOT_TOKEN_MEZUBOT,
+        webhookUrl: 'https://gekkobot-delta.vercel.app/api/telegram/mezubot',
     },
 ];

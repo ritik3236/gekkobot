@@ -15,7 +15,7 @@ class Logger {
 }
 
 export abstract class BaseTelegramBotService extends EventEmitter {
-    protected readonly bot: TelegramBot;
+    readonly bot: TelegramBot;
     protected readonly config: BotConfig;
     private botUsername: string | null = null;
     protected commandHandlers: Record<string, { desc: string, cmd: (msg: TelegramBot.Message) => Promise<void> }> = {};
@@ -43,6 +43,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     private async setupWebhook(): Promise<void> {
         await this.bot.setWebHook(this.config.webhookUrl, {
             allowed_updates: ['message', 'callback_query', 'my_chat_member'],
+            secret_token: process.env.TELEGRAM_SECRET_TOKEN,
         });
         Logger.info('WEBHOOK', `Webhook set to ${this.config.webhookUrl}`, this.config.botName);
     }
