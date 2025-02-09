@@ -1,4 +1,6 @@
 import { AuthService } from '@/lib/auth.service';
+import { maskEmail } from '@/lib/emailMasker';
+import { getTimezone, luxon } from '@/lib/localeDate';
 import { Withdrawal } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
@@ -42,12 +44,12 @@ export class DataPipeline {
         const payload = data
             .filter((i) => i.payment_gateway_name = 'AlphaGateway')
             .map(({ tid, amount, currency, created_at, email }) => ([
-                { label: 'TID: ', value: tid, type: 'string' },
-                { label: 'Amount: ', value: +amount, type: 'number', currency },
-                { label: 'Created At: ', value: created_at, type: 'date' },
-                { label: 'Email: ', value: email, type: 'string' },
+                { label: 'TID', value: tid, type: 'string' },
+                { label: 'Amount', value: +amount, type: 'number', currency },
+                { label: 'Created At', value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(), type: 'date' },
+                { label: 'Email', value: maskEmail(email), type: 'string' },
             ]));
 
-        return `AlphaGateway Transactions:\n\nTotal Pending Txn: ${total}\n\n${payload.map((data) => createTextMsg(data)).join('\n---\n\n')}`;
+        return `AlphaGateway Transactions:\n\nTotal Pending Txn: ${total}\n -----------\n\n${payload.map((data) => createTextMsg(data)).join('\n--- --- --- ---\n\n')}`;
     }
 }
