@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
 
         // Process update
         if (xbot) {
-            if (body.broadcoast_trigger) {
-                await xbot.handleCustomTriggers(body.broadcoast_trigger);
+            if (body.broadcoast_triggers) {
+                await xbot.handleCustomTriggers(body.broadcoast_triggers);
             } else {
                 xbot.bot.processUpdate(body);
             }
