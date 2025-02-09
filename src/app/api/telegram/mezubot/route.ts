@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { PayoutXService } from '@/bots/xbot';
+import { MezuService } from '@/bots/mezuBot';
 import { botsConfigs } from '@/lib/configs';
 
-let mezubot: PayoutXService | null = null;
+let mezubot: MezuService | null = null;
 let mezuInitializationPromise: Promise<void> | null = null;
 
 async function initializeBot() {
     if (!mezubot) {
-        mezubot = new PayoutXService(botsConfigs[1]);
+        mezubot = new MezuService(botsConfigs[1]);
         await mezubot.initialize();
         console.log('Mezu bot initialized');
     }
