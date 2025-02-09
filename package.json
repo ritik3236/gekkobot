@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "NODE_ENV=production next build",
     "build:analyze": "ANALYZE=true next build",
     "mockServer": "node mocks/mockServer.mjs",
     "start": "next start",
