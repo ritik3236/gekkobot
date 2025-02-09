@@ -4,7 +4,7 @@ import { PayoutXService } from '@/bots/xbot';
 import { botsConfigs } from '@/lib/configs';
 
 let mezubot: PayoutXService | null = null;
-let initializationPromise: Promise<void> | null = null;
+let mezuInitializationPromise: Promise<void> | null = null;
 
 async function initializeBot() {
     if (!mezubot) {
@@ -29,14 +29,14 @@ export async function POST(req: NextRequest) {
 
     try {
         // Lazy initialization with singleton pattern
-        if (!initializationPromise) {
-            initializationPromise = initializeBot().catch((error) => {
+        if (!mezuInitializationPromise) {
+            mezuInitializationPromise = initializeBot().catch((error) => {
                 console.error('Initialization failed:', error);
-                initializationPromise = null; // Reset to allow retry
+                mezuInitializationPromise = null; // Reset to allow retry
                 throw error;
             });
         }
-        await initializationPromise;
+        await mezuInitializationPromise;
 
         const body = await req.json();
 
