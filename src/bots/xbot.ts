@@ -18,10 +18,16 @@ export class XBotService extends BaseTelegramBotService {
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
                 console.log(new Date().toISOString(), 'balance');
-
-                const message = await this.generateMessageForTrigger('balance');
-
-                await this.bot.sendMessage(msg.chat.id, message);
+                await fetch('https://gekkobot-delta.vercel.app/api/telegram/xbot', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'x-telegram-bot-api-secret-token': process.env.TELEGRAM_SECRET_TOKEN || '',
+                    },
+                    body: JSON.stringify({
+                        broadcoast_triggers: ['balance'],
+                    }),
+                });
             },
         });
 
