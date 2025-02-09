@@ -28,7 +28,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     public async initialize(): Promise<void> {
-        if (process.env.NODE_ENV === 'production' && this.config.webhookUrl) {
+        if (this.config.webhookUrl) {
             await this.setupWebhook();
         }
 

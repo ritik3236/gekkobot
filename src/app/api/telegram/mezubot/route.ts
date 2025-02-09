@@ -5,7 +5,7 @@ import { botsConfigs } from '@/lib/configs';
 
 const mezubot = new PayoutXService(botsConfigs[0]);
 
-mezubot.initialize();
+mezubot.initialize().then(() => console.log('Mezu bot initialized'));
 
 export async function POST(req: NextRequest) {
     const token = req.headers.get('x-telegram-bot-api-secret-token');

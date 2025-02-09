@@ -5,7 +5,7 @@ import { botsConfigs } from '@/lib/configs';
 
 const xbot = new PayoutXService(botsConfigs[1]);
 
-xbot.initialize();
+xbot.initialize().then(() => console.log('XBot initialized'));
 
 export async function POST(req: NextRequest) {
     const token = req.headers.get('x-telegram-bot-api-secret-token');
