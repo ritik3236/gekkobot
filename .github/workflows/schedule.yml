@@ -10,6 +10,6 @@ jobs:
         run: |
           curl -X POST \
             -H "Content-Type: application/json" \
-            -H "x-telegram-bot-api-secret-token": "${{ secrets.TELEGRAM_SECRET_TOKEN }}" \
+            -H "x-telegram-bot-api-secret-token: ${{ secrets.TELEGRAM_SECRET_TOKEN }}" \
             -d '{"broadcoast_triggers": ["updates", "system"]}' \
             https://gekkobot-delta.vercel.app/api/telegram/xbot
