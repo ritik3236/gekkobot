@@ -63,6 +63,7 @@ export class AuthService {
                 method: 'GET',
                 headers,
                 signal: controller.signal,
+                cache: 'no-cache',
             });
 
             clearTimeout(timeout);

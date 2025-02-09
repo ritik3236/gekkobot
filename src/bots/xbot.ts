@@ -2,6 +2,7 @@ import { BaseTelegramBotService } from '@/bots/bot.service';
 import { DataPipeline } from '@/lib/dataPipeline';
 import { Logger } from '@/lib/logger';
 import { BotConfig } from '@/lib/types';
+import { sleep } from '@/lib/utils';
 
 export class XBotService extends BaseTelegramBotService {
     constructor(config: BotConfig) {
@@ -9,6 +10,7 @@ export class XBotService extends BaseTelegramBotService {
 
         this.addCommand('/start', {
             desc: 'Start the bot', cmd: async (msg) => {
+                await sleep(5000);
                 await this.bot.sendMessage(msg.chat.id, 'Welcome! Use /help to see available commands.');
             },
         });
