@@ -1,15 +1,12 @@
-name: Schedule POST Request
+name: Test Schedule
 on:
   schedule:
-    - cron: '*/10 * * * *' # Runs every 10 minutes
+    - cron: '*/10 * * * *'  # Every 10 minutes
+  workflow_dispatch:  # Allows manual triggering
+
 jobs:
-  send-request:
+  test-job:
     runs-on: ubuntu-latest
     steps:
-      - name: Send POST request
-        run: |
-          curl -X POST \
-            -H "Content-Type: application/json" \
-            -H "x-telegram-bot-api-secret-token: ${{ secrets.TELEGRAM_SECRET_TOKEN }}" \
-            -d '{"broadcoast_triggers": ["updates", "system"]}' \
-            https://gekkobot-delta.vercel.app/api/telegram/xbot
+      - name: Print Hello
+        run: echo "Hello World at $(date)"
