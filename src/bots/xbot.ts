@@ -2,7 +2,40 @@ import { BaseTelegramBotService } from '@/bots/bot.service';
 import { DataPipeline } from '@/lib/dataPipeline';
 import { Logger } from '@/lib/logger';
 import { BotConfig } from '@/lib/types';
-import { sleep } from '@/lib/utils';
+
+function splitMessageAtDelimiter(message: string, delimiter: string = '---', maxLength: number = 4096): string[] {
+    if (message.length <= maxLength) {
+        return [message]; // No need to split if within the limit
+    }
+
+    const chunks: string[] = [];
+    let start = 0;
+
+    while (start < message.length) {
+        let end = start + maxLength;
+
+        if (end >= message.length) {
+            // If the remaining message is shorter than maxLength, add it as the last chunk
+            chunks.push(message.slice(start));
+            break;
+        }
+
+        // Find the last occurrence of the delimiter within the current chunk
+        const splitPos = message.lastIndexOf(delimiter, end);
+
+        if (splitPos > start) {
+            // Split at the delimiter (include the delimiter in the chunk)
+            chunks.push(message.slice(start, splitPos + delimiter.length));
+            start = splitPos + delimiter.length;
+        } else {
+            // If no delimiter is found, force split at maxLength (but this shouldn't happen if the message is properly formatted)
+            chunks.push(message.slice(start, end));
+            start = end;
+        }
+    }
+
+    return chunks;
+}
 
 export class XBotService extends BaseTelegramBotService {
     constructor(config: BotConfig) {
@@ -10,24 +43,13 @@ export class XBotService extends BaseTelegramBotService {
 
         this.addCommand('/start', {
             desc: 'Start the bot', cmd: async (msg) => {
-                await sleep(5000);
                 await this.bot.sendMessage(msg.chat.id, 'Welcome! Use /help to see available commands.');
             },
         });
 
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
-                console.log(new Date().toISOString(), 'balance');
-                await fetch('https://gekkobot-delta.vercel.app/api/telegram/xbot', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'x-telegram-bot-api-secret-token': process.env.TELEGRAM_SECRET_TOKEN || '',
-                    },
-                    body: JSON.stringify({
-                        broadcoast_triggers: ['balance'],
-                    }),
-                });
+                await this.bot.sendMessage(msg.chat.id, 'Balance: 1000 INR');
             },
         });
 
@@ -53,7 +75,13 @@ export class XBotService extends BaseTelegramBotService {
             try {
                 const message = await this.generateMessageForTrigger(trigger);
 
-                await this.announceToGroups(message);
+                const chunks = splitMessageAtDelimiter(message);
+
+                for (const chunk of chunks) {
+                    await this.announceToGroups(chunk);
+                }
+
+                // if message is greater than 4096 chars, split it into multiple messages split from 4096 chars
             } catch (error) {
                 Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, { error }, this.config.botName);
             }
@@ -63,9 +91,9 @@ export class XBotService extends BaseTelegramBotService {
     private async generateMessageForTrigger(trigger: string): Promise<string> {
         switch (trigger) {
             case 'balance':
-                return DataPipeline.getPayoutPartnerXBalance();
-            case 'system':
-                return '🚨 Critical system alert!\n\nPlease check dashboard immediately.';
+                return DataPipeline.getPayoutPartnerAlphaBalance();
+            case 'pending_txns':
+                return DataPipeline.getPayoutPartnerAlphaTransactions();
             default:
                 return `ℹ️ New update: ${trigger}`;
         }

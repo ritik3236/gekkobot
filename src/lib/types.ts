@@ -47,6 +47,7 @@ export interface Withdrawal {
     created_at: string;
     updated_at: string;
     completed_at: string;
+    payment_gateway_name: string;
     txid: string;
     note: string;
     remark: string;

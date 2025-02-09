@@ -1,4 +1,5 @@
 import { AuthService } from '@/lib/auth.service';
+import { Withdrawal } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 interface createMsgInterface {
@@ -15,11 +16,9 @@ const createTextMsg = (payload: createMsgInterface[]) => {
 };
 
 export class DataPipeline {
-    static async getPayoutPartnerXBalance() {
-        console.log(new Date().toISOString(), 'balance pipeline');
-        const data = await AuthService.get('/admin/exchange_balances') as any[];
+    static async getPayoutPartnerAlphaBalance() {
+        const { data } = await AuthService.get('/admin/exchange_balances');
 
-        console.log(new Date().toISOString(), 'balance pipeline data');
         if (!data?.length) return '❌ No data found';
 
         const xettleBlc = data.filter(({ id }) => id === 'xettle');
@@ -28,6 +27,27 @@ export class DataPipeline {
             { label: 'Total Balance: ', value: +balance + +locked, type: 'number', currency },
         ]));
 
-        return `PartnerX Balance:\n\n${payload.map((data) => createTextMsg(data)).join('\n\n')}`;
+        return `AlphaGateway Balance:\n\n${payload.map((data) => createTextMsg(data)).join('\n\n')}`;
+    }
+
+    static async getPayoutPartnerAlphaTransactions() {
+        const { data = [], headers } = await AuthService.get('/admin/withdraws', {
+            state: ['processing'],
+            type: 'fiat',
+            limit: 50,
+        }) as { data: Withdrawal[]; headers: { total: string } };
+
+        const total = headers.total;
+
+        const payload = data
+            .filter((i) => i.payment_gateway_name = 'AlphaGateway')
+            .map(({ tid, amount, currency, created_at, email }) => ([
+                { label: 'TID: ', value: tid, type: 'string' },
+                { label: 'Amount: ', value: +amount, type: 'number', currency },
+                { label: 'Created At: ', value: created_at, type: 'date' },
+                { label: 'Email: ', value: email, type: 'string' },
+            ]));
+
+        return `AlphaGateway Transactions:\n\nTotal Pending Txn: ${total}\n\n${payload.map((data) => createTextMsg(data)).join('\n---\n\n')}`;
     }
 }
