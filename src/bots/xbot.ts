@@ -18,11 +18,10 @@ export class XBotService extends BaseTelegramBotService {
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
                 console.log(new Date().toISOString(), 'balance');
-                const balance = await DataPipeline.getPayoutPartnerXBalance();
 
-                console.log(new Date().toISOString(), 'balance');
+                const message = await this.generateMessageForTrigger('balance');
 
-                await this.bot.sendMessage(msg.chat.id, balance);
+                await this.bot.sendMessage(msg.chat.id, message);
             },
         });
 
