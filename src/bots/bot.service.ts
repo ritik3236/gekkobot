@@ -69,9 +69,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
                 return;
             }
-
-            console.info(msg);
-
+            
             await this.processCommand(msg);
         });
     }
