@@ -1,9 +1,9 @@
 export class Logger {
-    static error(context: string, error: unknown, metadata: Record<string, unknown>, botName: string): void {
+    static error(context: string, error: unknown, metadata?: Record<string, unknown>, botName?: string): void {
         console.error(`[${new Date().toISOString()}] ERROR [${context}] [${botName}]`, error, metadata);
     }
 
-    static info(context: string, message: string, botName: string): void {
+    static info(context: string, message: string, botName?: string): void {
         console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message);
     }
 }

@@ -4,8 +4,11 @@ import CryptoJS from 'crypto-js';
 import { Logger } from '@/lib/logger';
 import { buildQueryString } from '@/lib/utils';
 
+// Track pending requests
+const pendingRequests = new Map<string, AbortController>();
+
 export class AuthService {
-    private static API_TIMEOUT = 5000; // 5 seconds timeout
+    private static API_TIMEOUT = 10000; // 10 seconds timeout
 
     static getAuthHeaders() {
         const nonce = Date.now().toString();
@@ -20,16 +23,31 @@ export class AuthService {
         const signature = CryptoJS.HmacSHA256(sigString, secretKey).toString();
 
         return {
-            'Content-Type': 'application/json',
             'X-Auth-Apikey': accessKey,
             'X-Auth-Nonce': nonce,
             'X-Auth-Signature': signature,
+            'Content-Type': 'application/json',
         };
     }
 
     static async get(pathname: string, payload?: Record<string, any>) {
+        const requestKey = `${pathname}-${JSON.stringify(payload)}`;
+        const existingRequest = pendingRequests.get(requestKey);
+
+        // Cancel previous request if still pending
+        if (existingRequest) {
+            existingRequest.abort();
+            pendingRequests.delete(requestKey);
+        }
+
         const controller = new AbortController();
-        const timeout = setTimeout(() => controller.abort(), this.API_TIMEOUT);
+
+        pendingRequests.set(requestKey, controller);
+
+        const timeout = setTimeout(() => {
+            controller.abort();
+            pendingRequests.delete(requestKey);
+        }, this.API_TIMEOUT);
 
         try {
             const url = new URL(`${process.env.SERVER_HOST}/api/v2/peatio${pathname}`);
@@ -38,7 +56,7 @@ export class AuthService {
                 url.search = buildQueryString(payload);
             }
 
-            Logger.info('API Request:', `GET ${url.toString()}`, 'API');
+            Logger.info('API Request:', `GET ${url.toString()}`);
 
             const headers = this.getAuthHeaders();
             const response = await fetch(url.toString(), {
@@ -48,6 +66,7 @@ export class AuthService {
             });
 
             clearTimeout(timeout);
+            pendingRequests.delete(requestKey);
 
             if (!response.ok) {
                 throw new Error(`API responded with status ${response.status}: ${response.statusText}`);
@@ -56,18 +75,19 @@ export class AuthService {
             return await response.json();
         } catch (error) {
             clearTimeout(timeout);
+            pendingRequests.delete(requestKey);
 
             if (error.name === 'AbortError') {
-                Logger.error(`API Timeout after ${this.API_TIMEOUT}ms:`, { pathname }, {}, 'API');
+                Logger.error(`API Timeout after ${this.API_TIMEOUT}ms:`, { pathname });
 
                 return { error: '⚠️ Request timed out - please try again later' };
             }
 
-            Logger.error('API Request', 'Failed to fetch data', {
+            Logger.error('API Request Failed:', {
                 pathname,
                 error: error.message,
                 stack: error.stack,
-            }, 'API');
+            });
 
             return {
                 error: error.message.includes('timed out')
