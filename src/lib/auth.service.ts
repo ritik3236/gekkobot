@@ -1,5 +1,6 @@
 import CryptoJS from 'crypto-js';
 
+import { Logger } from '@/lib/logger';
 import { buildQueryString } from '@/lib/utils';
 
 export class AuthService {
@@ -30,8 +31,12 @@ export class AuthService {
                 url += buildQueryString(payload);
             }
 
-            const headers = new Headers(this.getAuthHeaders());
+            Logger.info('API Request:', url, 'GET');
+
+            const headers = this.getAuthHeaders();
             const response = await fetch(url.toString(), { method: 'GET', headers });
+
+            Logger.info('API Request:', url, 'GET');
 
             if (!response.ok) throw new Error(`Request failed: ${response.statusText}`);
 

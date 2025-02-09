@@ -64,12 +64,14 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
         // Handle regular messages
         this.bot.on('message', async (msg) => {
+            console.log(new Date().toISOString(), msg.text);
+
             if (!this.isAllowedChat(msg.chat.id)) {
                 await this.notifyUnauthorizedChat(msg.chat.id);
 
                 return;
             }
-            
+
             await this.processCommand(msg);
         });
     }

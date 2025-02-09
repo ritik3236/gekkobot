@@ -59,8 +59,10 @@ export class DataPipeline {
     }
 
     static async getPayoutPartnerXBalance() {
+        console.log(new Date().toISOString(), 'balance pipeline');
         const data = await AuthService.get('/admin/exchange_balances') as any[];
 
+        console.log(new Date().toISOString(), 'balance pipeline');
         if (!data?.length) return '❌ No data found';
 
         const xettleBlc = data.filter(({ id }) => id === 'xettle');
