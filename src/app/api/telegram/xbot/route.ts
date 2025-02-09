@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { PayoutXService } from '@/bots/xbot';
+import { XBotService } from '@/bots/xbot';
 import { botsConfigs } from '@/lib/configs';
 
-let xbot: PayoutXService | null = null;
+let xbot: XBotService | null = null;
 let initializationPromise: Promise<void> | null = null;
 
 async function initializeBot() {
     if (!xbot) {
-        xbot = new PayoutXService(botsConfigs[0]);
+        xbot = new XBotService(botsConfigs[0]);
         await xbot.initialize();
         console.log('Mezu bot initialized');
     }
@@ -44,7 +44,11 @@ export async function POST(req: NextRequest) {
 
         // Process update
         if (xbot) {
-            xbot.bot.processUpdate(body);
+            if (body.broadcoast_trigger) {
+                await xbot.handleCustomTriggers(body.broadcoast_trigger);
+            } else {
+                xbot.bot.processUpdate(body);
+            }
         } else {
             console.error('Bot not initialized before processing update');
 

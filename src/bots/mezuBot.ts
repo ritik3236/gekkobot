@@ -32,5 +32,23 @@ export class MezuService extends BaseTelegramBotService {
                 await this.bot.sendMessage(msg.chat.id, 'Balance: 1000 INR');
             },
         });
+
+        this.addCommand('/withdraw', {
+            desc: 'Withdrawal', cmd: async (msg) => {
+                await this.bot.sendMessage(msg.chat.id, 'Withdrawal: 1000 INR');
+            },
+        });
+
+        this.addCommand('/deposit', {
+            desc: 'Deposit', cmd: async (msg) => {
+                await this.bot.sendMessage(msg.chat.id, 'Deposit: 1000 INR');
+            },
+        });
+
+        this.addCommand('/transfer', {
+            desc: 'Transfer', cmd: async (msg) => {
+                await this.bot.sendMessage(msg.chat.id, 'Transfer: 1000 INR');
+            },
+        });
     }
 }

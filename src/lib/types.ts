@@ -64,23 +64,23 @@ export interface Withdrawal {
 
 export interface Payouts {
     id: string;
-   uid: string;
-   email: string;
-   currency_id: string;
-   blockchain_id: string;
-   withdraw_reference_type: string;
-   withdraw_reference_id: string;
-   gateway_reference_type: string;
-   gateway_reference_id: string;
-   gateway_reference_name: string;
-   tid: string;
-   txid: string;
-   remote_id: string;
-   state: string;
-   retry_attempt: number;
-   remark: string;
-   log_data: string;
-   metadata: null;
-   created_at: string;
-   updated_at: string;
+    uid: string;
+    email: string;
+    currency_id: string;
+    blockchain_id: string;
+    withdraw_reference_type: string;
+    withdraw_reference_id: string;
+    gateway_reference_type: string;
+    gateway_reference_id: string;
+    gateway_reference_name: string;
+    tid: string;
+    txid: string;
+    remote_id: string;
+    state: string;
+    retry_attempt: number;
+    remark: string;
+    log_data: string;
+    metadata: null;
+    created_at: string;
+    updated_at: string;
 }

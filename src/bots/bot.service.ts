@@ -2,17 +2,8 @@ import { EventEmitter } from 'events';
 
 import TelegramBot from 'node-telegram-bot-api';
 
+import { Logger } from '@/lib/logger';
 import { BotConfig, BotService } from '@/lib/types';
-
-class Logger {
-    static error(context: string, error: unknown, metadata: Record<string, unknown>, botName: string): void {
-        console.error(`[${new Date().toISOString()}] ERROR [${context}] [${botName}]`, error, metadata);
-    }
-
-    static info(context: string, message: string, botName: string): void {
-        console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message);
-    }
-}
 
 export abstract class BaseTelegramBotService extends EventEmitter {
     readonly bot: TelegramBot;
@@ -85,31 +76,36 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         });
     }
 
+    public addCommand(command: string, handler: {
+        desc: string,
+        cmd: (msg: TelegramBot.Message) => Promise<void>
+    }): void {
+        this.commandHandlers[command] = handler;
+    }
+
+    public addService(service: BotService): void {
+        this.services.push(service);
+    }
+
+    public async announceToGroups(message: string) {
+        try {
+            const promises = this.config.chatIds.map(async (chatId) => {
+                await this.bot.sendMessage(chatId, message, {
+                    parse_mode: 'Markdown',
+                });
+            });
+
+            await Promise.all(promises);
+        } catch (error) {
+            Logger.error('ANNOUNCEMENT_ERROR', error, {}, this.config.botName);
+        }
+    }
+
     private errorListeners(): void {
         this.bot.on('error', (error) => {
             Logger.error('BOT_ERROR', error, {}, this.config.botName);
             this.emit('error', error);
         });
-    }
-
-    private isAllowedChat(chatId: number): boolean {
-        return this.config.chatIds.includes(chatId);
-    }
-
-    private async getBotUsername(): Promise<string> {
-        if (!this.botUsername) {
-            this.botUsername = (await this.bot.getMe()).username;
-        }
-
-        return this.botUsername;
-    }
-
-    private async notifyUnauthorizedChat(chatId: number): Promise<void> {
-        await this.safeSendMessage(
-            chatId,
-            '❌ This bot is not allowed in this chat.',
-            'UNAUTHORIZED_ACCESS'
-        );
     }
 
     private async processCommand(msg: TelegramBot.Message): Promise<void> {
@@ -155,28 +151,6 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         } catch (error) {
             Logger.error('COMMAND_EXECUTION_ERROR', `Error executing command: ${command}`, { error }, this.config.botName);
             await this.handleCommandError(msg.chat.id, command, error);
-        }
-    }
-
-    private async handleCommandError(chatId: number, command: string, error: unknown): Promise<void> {
-        Logger.error(`COMMAND_${command.toUpperCase()}`, error, {}, this.config.botName);
-        await this.safeSendMessage(
-            chatId,
-            '⚠️ An error occurred while processing your request.',
-            'COMMAND_ERROR'
-        );
-    }
-
-    private async safeSendMessage(
-        chatId: number,
-        message: string,
-        context: string
-    ): Promise<void> {
-        try {
-            await this.bot.sendMessage(chatId, message);
-            Logger.info(context, `Message sent to ${chatId}`, this.config.botName);
-        } catch (error) {
-            Logger.error(context, error, { chatId, message }, this.config.botName);
         }
     }
 
@@ -233,14 +207,45 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         );
     }
 
-    public addCommand(command: string, handler: {
-        desc: string,
-        cmd: (msg: TelegramBot.Message) => Promise<void>
-    }): void {
-        this.commandHandlers[command] = handler;
+    private async handleCommandError(chatId: number, command: string, error: unknown): Promise<void> {
+        Logger.error(`COMMAND_${command.toUpperCase()}`, error, {}, this.config.botName);
+        await this.safeSendMessage(
+            chatId,
+            '⚠️ An error occurred while processing your request.',
+            'COMMAND_ERROR'
+        );
     }
 
-    public addService(service: BotService): void {
-        this.services.push(service);
+    private isAllowedChat(chatId: number): boolean {
+        return this.config.chatIds.includes(chatId);
+    }
+
+    private async getBotUsername(): Promise<string> {
+        if (!this.botUsername) {
+            this.botUsername = (await this.bot.getMe()).username;
+        }
+
+        return this.botUsername;
+    }
+
+    private async notifyUnauthorizedChat(chatId: number): Promise<void> {
+        await this.safeSendMessage(
+            chatId,
+            '❌ This bot is not allowed in this chat.',
+            'UNAUTHORIZED_ACCESS'
+        );
+    }
+
+    private async safeSendMessage(
+        chatId: number,
+        message: string,
+        context: string
+    ): Promise<void> {
+        try {
+            await this.bot.sendMessage(chatId, message);
+            Logger.info(context, `Message sent to ${chatId}`, this.config.botName);
+        } catch (error) {
+            Logger.error(context, error, { chatId, message }, this.config.botName);
+        }
     }
 }
