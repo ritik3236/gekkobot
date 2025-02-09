@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { PayoutXService } from '@/bots/xbot';
 import { botsConfigs } from '@/lib/configs';
 
-const mezubot = new PayoutXService(botsConfigs[1]);
+const mezubot = new PayoutXService(botsConfigs[0]);
 
 mezubot.initialize();
 
