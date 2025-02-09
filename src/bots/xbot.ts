@@ -15,7 +15,7 @@ export class XBotService extends BaseTelegramBotService {
 
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
-                const balance = await DataPipeline.getPayoutPartnersBalance();
+                const balance = await DataPipeline.getPayoutPartnerXBalance();
 
                 await this.bot.sendMessage(msg.chat.id, balance);
             },
@@ -53,7 +53,7 @@ export class XBotService extends BaseTelegramBotService {
     private async generateMessageForTrigger(trigger: string): Promise<string> {
         switch (trigger) {
             case 'balance':
-                return DataPipeline.getPayoutPartnersBalance();
+                return DataPipeline.getPayoutPartnerXBalance();
             case 'system':
                 return '🚨 Critical system alert!\n\nPlease check dashboard immediately.';
             default:

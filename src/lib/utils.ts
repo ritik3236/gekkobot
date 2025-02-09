@@ -73,7 +73,7 @@ export const formatNumber = (number: string | number) => {
         return number;
     }
 
-    const formatter = new Intl.NumberFormat('en-US');
+    const formatter = new Intl.NumberFormat('en-IN');
 
     return formatter.format(+number);
 };

@@ -58,6 +58,20 @@ export class DataPipeline {
         return `Payout Partners Balance:\n\n${payload.map((data) => createTextMsg(data)).join('\n\n')}`;
     }
 
+    static async getPayoutPartnerXBalance() {
+        const data = await AuthService.get('/admin/exchange_balances') as any[];
+
+        if (!data?.length) return '❌ No data found';
+
+        const xettleBlc = data.filter(({ id }) => id === 'xettle');
+
+        const payload = xettleBlc.map(({ balance, currency, locked }) => ([
+            { label: 'Total Balance: ', value: +balance + +locked, type: 'number', currency },
+        ]));
+
+        return `PartnerX Balance:\n\n${payload.map((data) => createTextMsg(data)).join('\n\n')}`;
+    }
+
     static async getLastWithdrawals() {
         const data = await AuthService.get('/admin/withdraws', { limit: 10 }) as Withdrawal[];
 
