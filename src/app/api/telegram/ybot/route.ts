@@ -1,50 +1,46 @@
 import { NextRequest, NextResponse } from 'next/server';
 
-import { MezuService } from '@/bots/mezuBot';
+import { YBotService } from '@/bots/ybot';
 import { botsConfigs } from '@/lib/configs';
 
-let mezubot: MezuService | null = null;
-let mezuInitializationPromise: Promise<void> | null = null;
+let ybot: YBotService | null = null;
+let ybotInitializationPromise: Promise<void> | null = null;
 
 async function initializeBot() {
-    if (!mezubot) {
-        mezubot = new MezuService(botsConfigs[1]);
-        await mezubot.initialize();
-        console.log('Mezu bot initialized');
+    if (!ybot) {
+        ybot = new YBotService(botsConfigs[1]);
+        await ybot.initialize();
     }
 }
 
 export async function POST(req: NextRequest) {
-    // Verify secret token first
     const token = req.headers.get('x-telegram-bot-api-secret-token');
 
     if (token !== process.env.TELEGRAM_SECRET_TOKEN) {
         console.warn('Unauthorized access attempt', {
             receivedToken: token,
-            expectedToken: process.env.TELEGRAM_SECRET_TOKEN ? '***' : 'undefined',
+            expectedToken: process.env.TELEGRAM_SECRET_TOKEN ? 'ARDqi****CebDF' : 'undefined',
         });
 
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     try {
-        // Lazy initialization with singleton pattern
-        if (!mezuInitializationPromise) {
-            mezuInitializationPromise = initializeBot().catch((error) => {
+        if (!ybotInitializationPromise) {
+            ybotInitializationPromise = initializeBot().catch((error) => {
                 console.error('Initialization failed:', error);
-                mezuInitializationPromise = null; // Reset to allow retry
+                ybotInitializationPromise = null;
                 throw error;
             });
         }
-        await mezuInitializationPromise;
+        await ybotInitializationPromise;
 
         const body = await req.json();
 
         console.log('Received update:', body);
 
-        // Process update
-        if (mezubot) {
-            mezubot.bot.processUpdate(body);
+        if (ybot) {
+            ybot.bot.processUpdate(body);
         } else {
             console.error('Bot not initialized before processing update');
 

@@ -19,7 +19,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     public async initialize(): Promise<void> {
-        if (this.config.webhookUrl) {
+        if (!this.config.polling && this.config.webhookUrl) {
             await this.setupWebhook();
         }
 

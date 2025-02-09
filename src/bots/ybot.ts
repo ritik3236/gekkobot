@@ -1,7 +1,7 @@
 import { BaseTelegramBotService } from '@/bots/bot.service';
 import { BotConfig } from '@/lib/types';
 
-export class MezuService extends BaseTelegramBotService {
+export class YBotService extends BaseTelegramBotService {
     constructor(config: BotConfig) {
         super(config);
 

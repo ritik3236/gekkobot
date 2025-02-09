@@ -1,4 +1,4 @@
-name: Schedule POST Request
+name: Schedule XBOT Broadcoast Request
 on:
   schedule:
     - cron: '*/30 * * * *' # Runs every 30 minutes
@@ -13,5 +13,5 @@ jobs:
           curl -X POST \
             -H "Content-Type: application/json" \
             -H "x-telegram-bot-api-secret-token: ${{ secrets.TELEGRAM_SECRET_TOKEN }}" \
-            -d '{"broadcoast_triggers": ["updates", "system"]}' \
+            -d '{"broadcoast_triggers": ["balance", "system"]}' \
             https://gekkobot-delta.vercel.app/api/telegram/xbot

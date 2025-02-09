@@ -45,6 +45,8 @@ export async function POST(req: NextRequest) {
         if (xbot) {
             if (body.broadcoast_triggers) {
                 await xbot.handleCustomTriggers(body.broadcoast_triggers);
+            } else if (body.bot_kill === true) {
+                await xbot.bot.closeWebHook();
             } else {
                 xbot.bot.processUpdate(body);
             }

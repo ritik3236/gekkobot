@@ -1,4 +1,5 @@
 import { BaseTelegramBotService } from '@/bots/bot.service';
+import { DataPipeline } from '@/lib/dataPipeline';
 import { Logger } from '@/lib/logger';
 import { BotConfig } from '@/lib/types';
 
@@ -9,6 +10,14 @@ export class XBotService extends BaseTelegramBotService {
         this.addCommand('/start', {
             desc: 'Start the bot', cmd: async (msg) => {
                 await this.bot.sendMessage(msg.chat.id, 'Welcome! Use /help to see available commands.');
+            },
+        });
+
+        this.addCommand('/balance', {
+            desc: 'Get balance', cmd: async (msg) => {
+                const balance = await DataPipeline.getPayoutPartnersBalance();
+
+                await this.bot.sendMessage(msg.chat.id, balance);
             },
         });
 
@@ -43,8 +52,8 @@ export class XBotService extends BaseTelegramBotService {
 
     private async generateMessageForTrigger(trigger: string): Promise<string> {
         switch (trigger) {
-            case 'updates':
-                return '💰 Account balance update:\n\n- Total balance: $1000\n- Available: $800\n- In use: $200';
+            case 'balance':
+                return DataPipeline.getPayoutPartnersBalance();
             case 'system':
                 return '🚨 Critical system alert!\n\nPlease check dashboard immediately.';
             default:
