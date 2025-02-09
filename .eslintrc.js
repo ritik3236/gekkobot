@@ -7,7 +7,6 @@ module.exports = {
     extends: [
         'plugin:react/recommended',
         'plugin:jsx-a11y/recommended',
-        'plugin:tailwindcss/recommended',
         'plugin:@tanstack/query/recommended',
         'next/core-web-vitals',
     ],
@@ -26,7 +25,6 @@ module.exports = {
         '@typescript-eslint',
         '@stylistic/eslint-plugin',
         'jsx-a11y',
-        'tailwindcss',
     ],
     root: true,
     rules: {

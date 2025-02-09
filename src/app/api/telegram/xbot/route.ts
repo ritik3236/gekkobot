@@ -10,7 +10,6 @@ async function initializeBot() {
     if (!xbot) {
         xbot = new XBotService(botsConfigs[0]);
         await xbot.initialize();
-        console.log('Mezu bot initialized');
     }
 }
 
