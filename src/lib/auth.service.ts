@@ -5,8 +5,8 @@ import { buildQueryString } from '@/lib/utils';
 export class AuthService {
     static getAuthHeaders() {
         const nonce = Date.now().toString();
-        const accessKey = process.env.ACCESS_KEY;
-        const secretKey = process.env.SECRET_KEY;
+        const accessKey = process.env.SERVER_ACCESS_KEY;
+        const secretKey = process.env.SERVER_SECRET_KEY;
 
         if (!accessKey || !secretKey) throw new Error('Missing API keys');
 
@@ -24,7 +24,7 @@ export class AuthService {
 
     static async get(pathname: string, payload?: Record<string, any>) {
         try {
-            let url = new URL(`${process.env.HOST}/api/v2/peatio${pathname}?`).toString();
+            let url = new URL(`${process.env.SERVER_HOST}/api/v2/peatio${pathname}?`).toString();
 
             if (payload) {
                 url += buildQueryString(payload);
