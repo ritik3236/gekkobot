@@ -44,7 +44,7 @@ export class DataPipeline {
 
         const payload = data
             .filter((i) => i.payment_gateway_name = 'AlphaGateway')
-            .map(({ tid, amount, currency, created_at, email }) => ([
+            .map(({ tid, amount, currency, created_at, email }) => createTextMsg([
                 { label: 'TID', value: '`' + tid + '`', type: 'string' },
                 { label: 'Amount', value: +amount, type: 'number', currency },
                 { label: 'Email', value: maskEmail(email, '.'), type: 'string' },
@@ -58,8 +58,8 @@ export class DataPipeline {
         return {
             data: [
                 `*🏦AlphaGateway*\n\n Pending Transactions: *${formatNumber(+total)}*\n`,
-                ...payload.map((data) => createTextMsg(data)),
-            ],
+            ].concat(payload),
+            options: {},
         };
     }
 }
