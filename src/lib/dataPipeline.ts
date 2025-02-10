@@ -34,14 +34,12 @@ export class DataPipeline {
     }
 
     static async getPayoutPartnerAlphaTransactions() {
-        const { data = [], headers } = await AuthService.get('/admin/withdraws', {
+        const { data = [] } = await AuthService.get('/admin/withdraws', {
             limit: 50,
             ordering: 'asc',
             state: ['processing'],
             type: 'fiat',
         }) as { data: Withdrawal[]; headers: { total: string } };
-
-        const total = headers.total;
 
         const payload = data
             .filter((i) => i.payment_gateway_name = 'AlphaGateway')
@@ -58,7 +56,7 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏦AlphaGateway*\n Pending Transactions: *${formatNumber(+total)}*\n`,
+                `*🏦AlphaGateway*\n Pending Transactions: *${formatNumber(+data.length)}*\n`,
             ].concat(payload),
             options: {},
         };
