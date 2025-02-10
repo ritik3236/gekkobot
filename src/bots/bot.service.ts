@@ -4,7 +4,6 @@ import TelegramBot from 'node-telegram-bot-api';
 
 import { Logger } from '@/lib/logger';
 import { BotConfig, BotService } from '@/lib/types';
-import { sleep } from '@/lib/utils';
 
 export abstract class BaseTelegramBotService extends EventEmitter {
     readonly bot: TelegramBot;
@@ -147,9 +146,6 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         }
 
         try {
-            console.log('I am sleeping for 4 seconds');
-            await sleep(4000);
-            console.log('I am awake now');
             await handler.cmd(msg);
         } catch (error) {
             Logger.error('COMMAND_EXECUTION_ERROR', `Error executing command: ${command}`, { error }, this.config.botName);

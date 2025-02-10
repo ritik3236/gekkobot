@@ -1,6 +1,5 @@
 import { BaseTelegramBotService } from '@/bots/bot.service';
 import { BotConfig } from '@/lib/types';
-import { sleep } from '@/lib/utils';
 
 export class YBotService extends BaseTelegramBotService {
     constructor(config: BotConfig) {
@@ -30,9 +29,6 @@ export class YBotService extends BaseTelegramBotService {
 
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
-                console.log('I am sleeping');
-                await sleep(60 * 1000);
-                console.log('I am awake');
                 // const blc = await DataPipeline.getPayoutPartnerAlphaTransactions();
 
                 await this.sendSafeMessage(msg.chat.id,'hello', 'XBOT_BALANCE');
