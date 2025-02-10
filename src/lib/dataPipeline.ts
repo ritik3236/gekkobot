@@ -42,7 +42,7 @@ export class DataPipeline {
 
         const total = headers.total;
 
-        const payload = [...data, ...data]
+        const payload = data
             .filter((i) => i.payment_gateway_name = 'AlphaGateway')
             .map(({ tid, amount, currency, created_at, email }) => createTextMsg([
                 { label: 'TID', value: '`' + tid + '`', type: 'string' },
