@@ -86,18 +86,24 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         this.services.push(service);
     }
 
-    public async announceToGroups(groupIds: number[], message: string) {
-        const promises = groupIds.map(async (chatId) => {
-            try {
-                await this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
-                    parse_mode: 'Markdown',
-                });
-            } catch (error) {
-                Logger.error('ANNOUNCEMENT_ERROR', `Error sending announcement to group: ${chatId}`, this.config.botName, error);
-            }
-        });
+    public async announceToGroups(groupIds: number[], message: string): Promise<string[]> {
+        const batchSize = 5; // Avoid Telegram rate limits
+        const errors: string[] = [];
 
-        await Promise.all(promises);
+        for (let i = 0; i < groupIds.length; i += batchSize) {
+            const batch = groupIds.slice(i, i + batchSize);
+
+            await Promise.all(batch.map((chatId) =>
+                this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
+                    parse_mode: 'Markdown',
+                }).catch((error) => {
+                    errors.push(`ANNOUNCEMENT_ERROR: Failed to send to ${chatId}`);
+                    Logger.error('ANNOUNCEMENT_ERROR', `Error sending announcement to group: ${chatId}`, this.config.botName, error);
+                })
+            ));
+        }
+
+        return errors;
     }
 
     private errorListeners(): void {
@@ -249,6 +255,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
                 await this.bot.sendMessage(chatId, this.escapeTelegramEntities(message), options);
             } catch (error) {
                 Logger.error(context, error, this.config.botName, { message });
+                throw error;
             }
         }
     }

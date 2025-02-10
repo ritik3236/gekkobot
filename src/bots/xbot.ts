@@ -75,7 +75,9 @@ export class XBotService extends BaseTelegramBotService {
     public async handleBroadcastTriggers(payload: {
         broadcast_triggers: string[],
         broadcast_groups: number[]
-    }): Promise<void> {
+    }): Promise<string> {
+        const errors: string[] = [];
+
         for (const trigger of payload.broadcast_triggers) {
             try {
                 const { data } = await this.handleTrigger(trigger);
@@ -83,13 +85,15 @@ export class XBotService extends BaseTelegramBotService {
                 const chunks = splitMessageAtDelimiter(data.join('\n---------- +++ ---------- \n'));
 
                 for (const chunk of chunks) {
-                    await this.announceToGroups(payload.broadcast_groups, chunk);
+                    errors.push(...await this.announceToGroups(payload.broadcast_groups, chunk));
                 }
 
             } catch (error) {
                 Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, this.config.botName, { error });
             }
         }
+
+        return errors.join('\n');
     }
 
     private async handleTrigger(trigger: string): Promise<{ data: string[], options?: any, }> {

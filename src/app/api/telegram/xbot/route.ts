@@ -41,11 +41,15 @@ export async function POST(req: NextRequest) {
 
         Logger.log('XAPI', 'Received update:', 'XBot', body);
 
+        let res = null;
+
         if (xbot) {
             if (body.broadcast_triggers) {
-                await xbot.handleBroadcastTriggers(body);
-            } else if (body.bot_kill === true) {
+                res = await xbot.handleBroadcastTriggers(body);
+            } else if (body.bot_kill === 'SHUTDOWN') {
                 await xbot.bot.closeWebHook();
+            } else if (body.bot_kill === 'RESTART') {
+                await xbot.bot.openWebHook();
             } else if (body.leave_group) {
                 await xbot.bot.leaveChat(body.leave_group);
             } else {
@@ -60,7 +64,7 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        return NextResponse.json({ status: 'ok' });
+        return NextResponse.json({ status: 'ok', res: res });
     } catch (error) {
         Logger.error('XAPI', 'Error handling request:', 'XBot', error);
 
