@@ -88,6 +88,7 @@ export class XBotService extends BaseTelegramBotService {
 
             } catch (error) {
                 Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, this.config.botName, { error });
+                throw error;
             }
         }
     }
