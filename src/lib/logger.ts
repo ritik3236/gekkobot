@@ -1,11 +1,17 @@
 export class Logger {
-    static error(context: string, error: unknown, metadata?: Record<string, unknown>, botName?: string): void {
-        console.error(`[${new Date().toISOString()}] ERROR [${context}] [${botName}]`, error, metadata);
+    static error(context: string, message: unknown, botName?: string, metadata?: Record<string, unknown>): void {
+        console.error(`[${new Date().toISOString()}] ERROR [${context}] [${botName}]`, message, metadata);
     }
 
-    static info(context: string, message: string, botName?: string): void {
-        console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message);
+    static warn(context: string, message: string, botName?: string, metadata?: Record<string, unknown>): void {
+        console.warn(`[${new Date().toISOString()}] WARN [${context}] [${botName}]`, message, metadata);
+    }
+
+    static info(context: string, message: string, botName?: string, metadata?: Record<string, unknown>): void {
+        console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message, metadata);
+    }
+
+    static log(context: string, message: string, botName?: string, metadata?: Record<string, unknown>): void {
+        console.info(`[${new Date().toISOString()}] INFO [${context}] [${botName}]`, message, metadata);
     }
 }
-
-export const logger = new Logger();

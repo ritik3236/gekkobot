@@ -43,7 +43,7 @@ export class AuthService {
 
             return { data, headers: { total: res.headers.get('Total') }, errror: null };
         } catch (error) {
-            console.error('API Error:', error);
+            Logger.error('API Error:', error);
 
             return { error: '⚠️ Error fetching data.', data: null, headers: null };
         }

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 
 import { XBotService } from '@/bots/xbot';
 import { botsConfigs } from '@/lib/configs';
+import { Logger } from '@/lib/logger';
 
 let xbot: XBotService | null = null;
 let initializationPromise: Promise<void> | null = null;
@@ -14,11 +15,10 @@ async function initializeBot() {
 }
 
 export async function POST(req: NextRequest) {
-    // Verify secret token first
     const token = req.headers.get('x-telegram-bot-api-secret-token');
 
     if (token !== process.env.TELEGRAM_SECRET_TOKEN) {
-        console.warn('Unauthorized access attempt', {
+        Logger.warn('XAPI', 'Unauthorized access attempt', 'XBot', {
             receivedToken: token,
             expectedToken: process.env.TELEGRAM_SECRET_TOKEN ? '***' : 'undefined',
         });
@@ -30,8 +30,8 @@ export async function POST(req: NextRequest) {
         // Lazy initialization with singleton pattern
         if (!initializationPromise) {
             initializationPromise = initializeBot().catch((error) => {
-                console.error('Initialization failed:', error);
-                initializationPromise = null; // Reset to allow retry
+                Logger.error('XAPI', 'Initialization failed:', 'XBot', error);
+                initializationPromise = null;
                 throw error;
             });
         }
@@ -39,19 +39,22 @@ export async function POST(req: NextRequest) {
 
         const body = await req.json();
 
-        console.log('Received update:', body);
+        Logger.log('XAPI', 'Received update:', 'XBot', body);
 
-        // Process update
         if (xbot) {
             if (body.broadcoast_triggers) {
                 await xbot.handleCustomTriggers(body.broadcoast_triggers);
             } else if (body.bot_kill === true) {
                 await xbot.bot.closeWebHook();
+            } else if (body.leave_groups) {
+                for (const groupId of body.leave_groups) {
+                    await xbot.bot.leaveChat(groupId);
+                }
             } else {
                 xbot.bot.processUpdate(body);
             }
         } else {
-            console.error('Bot not initialized before processing update');
+            Logger.error('XAPI', 'Bot not initialized before processing update', 'XBot');
 
             return NextResponse.json(
                 { error: 'Bot initialization failed' },
@@ -61,7 +64,7 @@ export async function POST(req: NextRequest) {
 
         return NextResponse.json({ status: 'ok' });
     } catch (error) {
-        console.error('Error handling request:', error);
+        Logger.error('XAPI', 'Error handling request:', 'XBot', error);
 
         return NextResponse.json(
             { error: 'Internal Server Error' },

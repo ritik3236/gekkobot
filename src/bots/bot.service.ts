@@ -96,13 +96,13 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
             await Promise.all(promises);
         } catch (error) {
-            Logger.error('ANNOUNCEMENT_ERROR', error, {}, this.config.botName);
+            Logger.error('ANNOUNCEMENT_ERROR', error, this.config.botName);
         }
     }
 
     private errorListeners(): void {
         this.bot.on('error', (error) => {
-            Logger.error('BOT_ERROR', error, {}, this.config.botName);
+            Logger.error('BOT_ERROR', error, this.config.botName);
             this.emit('error', error);
         });
     }
@@ -148,7 +148,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         try {
             await handler.cmd(msg);
         } catch (error) {
-            Logger.error('COMMAND_EXECUTION_ERROR', `Error executing command: ${command}`, { error }, this.config.botName);
+            Logger.error('COMMAND_EXECUTION_ERROR', `Error executing command: ${command}`, this.config.botName, { error });
             await this.handleCommandError(msg.chat.id, command, error);
         }
     }
@@ -207,7 +207,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     private async handleCommandError(chatId: number, command: string, error: unknown): Promise<void> {
-        Logger.error(`COMMAND_${command.toUpperCase()}`, error, {}, this.config.botName);
+        Logger.error(`COMMAND_${command.toUpperCase()}`, error, this.config.botName);
         await this.sendSafeMessage(
             chatId,
             '⚠️ An error occurred while processing your request.',
@@ -248,7 +248,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
             try {
                 await this.bot.sendMessage(chatId, this.escapeTelegramEntities(message), options);
             } catch (error) {
-                Logger.error(context, error, { message }, this.config.botName);
+                Logger.error(context, error, this.config.botName, { message });
             }
         }
     }

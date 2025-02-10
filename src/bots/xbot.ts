@@ -75,7 +75,7 @@ export class XBotService extends BaseTelegramBotService {
     public async handleCustomTriggers(triggers: string[]): Promise<void> {
         for (const trigger of triggers) {
             try {
-                const { data } = await this.generateMessageForTrigger(trigger);
+                const { data } = await this.handleTrigger(trigger);
 
                 const chunks = splitMessageAtDelimiter(data.join('\n---------- +++ ---------- \n'));
 
@@ -84,12 +84,12 @@ export class XBotService extends BaseTelegramBotService {
                 }
 
             } catch (error) {
-                Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, { error }, this.config.botName);
+                Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, this.config.botName, { error });
             }
         }
     }
 
-    private async generateMessageForTrigger(trigger: string): Promise<{ data: string[], options?: any, }> {
+    private async handleTrigger(trigger: string): Promise<{ data: string[], options?: any, }> {
         switch (trigger) {
             case 'balance':
                 return DataPipeline.getPayoutPartnerAlphaBalance();

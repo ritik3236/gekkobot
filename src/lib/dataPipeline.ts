@@ -26,7 +26,10 @@ export class DataPipeline {
         const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
         return {
-            data: [`🏦AlphaGateway Balance:\n*${formatNumber(+balance + +locked) + ' INR'}*\n`],
+            data: [`🏛️ AlphaGateway\n\nTotal Balance:\n*${formatNumber(+balance + +locked, {
+                style: 'currency',
+                currency: 'INR',
+            })}*\n`],
             options: {},
         };
     }
@@ -49,7 +52,11 @@ export class DataPipeline {
                 return createTextMsg([
                     { label: 'Order Id', value: '`' + tid + '`', type: 'string' },
                     { label: 'Remote Id', value: '`' + remote_id + '`', type: 'string' },
-                    { label: 'Amount', value: +amount, type: 'number', currency: currency_id },
+                    {
+                        label: 'Amount',
+                        value: formatNumber(amount, { style: 'currency', currency: currency_id }),
+                        type: 'text',
+                    },
                     {
                         label: 'Created At',
                         value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(),
@@ -60,9 +67,10 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏦AlphaGateway*
-                \n Processing Orders: *${formatNumber(+data.length)}*
-                \n Order Amount: *${formatNumber(totalAmount)} INR*`,
+                `*🏛️ AlphaGateway*\n\nProcessing Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${formatNumber(totalAmount, {
+                    style: 'currency',
+                    currency: 'INR',
+                })}*\n`,
             ].concat(payload),
             options: {},
         };

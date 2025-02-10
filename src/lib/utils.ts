@@ -56,12 +56,12 @@ export const buildQueryString = (action: Record<string, any>, excludeKeys: strin
     return queryString ? `?${queryString}` : '';
 };
 
-export const formatNumber = (number: string | number) => {
+export const formatNumber = (number: string | number, options: Intl.NumberFormatOptions = {}, locale: string = 'en-IN') => {
     if (!+number) {
         return number;
     }
 
-    const formatter = new Intl.NumberFormat('en-IN');
+    const formatter = new Intl.NumberFormat(locale, options);
 
     return formatter.format(+number);
 };
