@@ -43,7 +43,7 @@ export class DataPipeline {
 
         const payload = data
             .filter((i) => i.gateway_reference_name = 'AlphaGateway')
-            .map(({ tid, amount, currency_id, remote_id, created_at }) => {
+            .map(({ tid, amount = 0, currency_id, remote_id, created_at }) => {
                 totalAmount += +amount;
 
                 return createTextMsg([
