@@ -81,7 +81,7 @@ export class XBotService extends BaseTelegramBotService {
                     const chunks = splitMessageAtDelimiter(message);
 
                     for (const chunk of chunks) {
-                        await this.announceToGroups(chunk);
+                        this.announceToGroups(chunk);
                     }
                 }
 
