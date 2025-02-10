@@ -28,7 +28,7 @@ export class DataPipeline {
         const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
         return {
-            data: [`AlphaGateway Balance:\n*${(+balance + +locked) + ' INR'}*\n`],
+            data: [`🏦AlphaGateway Balance:\n*${(+balance + +locked) + ' INR'}*\n`],
             options: {},
         };
     }
