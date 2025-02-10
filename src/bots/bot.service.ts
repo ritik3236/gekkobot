@@ -15,30 +15,20 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     protected constructor(config: BotConfig) {
         super();
         this.config = config;
-        this.bot = new TelegramBot(config.token, {
-            polling: {
-                interval: 3000, // Interval between requests (3 seconds)
-                autoStart: true, // Automatically start polling
-                params: {
-                    timeout: 10, // Request timeout (10 seconds)
-                },
-            },
-        });
+        this.bot = new TelegramBot(config.token, { polling: config.polling });
     }
 
     public async initialize(): Promise<void> {
-        // if (!this.config.polling && this.config.webhookUrl) {
-        //     await this.setupWebhook();
-        // }
+        if (!this.config.polling && this.config.webhookUrl) {
+            await this.setupWebhook();
+        }
 
         await this.registerCommands();
         this.setupListeners();
         await this.messageListener();
         this.errorListeners();
         this.services.forEach((service) => service.start());
-
-        console.log(this.bot.isPolling());
-
+        
         Logger.info('INIT', 'Bot initialized 🚀', this.config.botName);
     }
 
