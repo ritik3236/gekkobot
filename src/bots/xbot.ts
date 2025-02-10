@@ -93,7 +93,7 @@ export class XBotService extends BaseTelegramBotService {
         switch (trigger) {
             case 'balance':
                 return DataPipeline.getPayoutPartnerAlphaBalance();
-            case 'pending_txns':
+            case 'pending_txn':
                 return DataPipeline.getPayoutPartnerAlphaTransactions();
             default:
                 return { data: [`ℹ️ New update: \\${trigger}`], options: {} };
