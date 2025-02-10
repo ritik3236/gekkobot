@@ -4,18 +4,6 @@ export const fnCapitalize = (str: string) => {
 
 export const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms));
 
-export const numberFormatter = (number: number | string): string => {
-    if (typeof window !== 'undefined') {
-        const userPreference = localStorage.getItem('numberFormater') || 'en-US'; // Fallback to "en-US"
-
-        return Intl.NumberFormat(userPreference).format(Number(number)).toString();
-    }
-
-    const defaultLocale = 'en-US';
-
-    return Intl.NumberFormat(defaultLocale).format(Number(number)).toString();
-};
-
 export const truncateText = (text: string, length: number = 24, direction: 'end' | 'middle' = 'end'): string => {
     if (text.length <= length) {
         return text;

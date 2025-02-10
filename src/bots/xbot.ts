@@ -89,7 +89,7 @@ export class XBotService extends BaseTelegramBotService {
         }
     }
 
-    private async generateMessageForTrigger(trigger: string): Promise<{ data: string[], options: any, }> {
+    private async generateMessageForTrigger(trigger: string): Promise<{ data: string[], options?: any, }> {
         switch (trigger) {
             case 'balance':
                 return DataPipeline.getPayoutPartnerAlphaBalance();
