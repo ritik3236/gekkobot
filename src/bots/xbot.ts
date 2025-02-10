@@ -77,10 +77,12 @@ export class XBotService extends BaseTelegramBotService {
             try {
                 const { data } = await this.generateMessageForTrigger(trigger);
 
-                const chunks = splitMessageAtDelimiter(data.join('\n --- \n'));
+                for (const message of data) {
+                    const chunks = splitMessageAtDelimiter(message);
 
-                for (const chunk of chunks) {
-                    await this.announceToGroups(chunk);
+                    for (const chunk of chunks) {
+                        this.announceToGroups(chunk);
+                    }
                 }
 
             } catch (error) {
