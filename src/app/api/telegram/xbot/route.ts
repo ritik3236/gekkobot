@@ -42,14 +42,12 @@ export async function POST(req: NextRequest) {
         Logger.log('XAPI', 'Received update:', 'XBot', body);
 
         if (xbot) {
-            if (body.broadcoast_triggers) {
-                await xbot.handleCustomTriggers(body.broadcoast_triggers);
+            if (body.broadcast_triggers) {
+                await xbot.handleBroadcastTriggers(body);
             } else if (body.bot_kill === true) {
                 await xbot.bot.closeWebHook();
-            } else if (body.leave_groups) {
-                for (const groupId of body.leave_groups) {
-                    await xbot.bot.leaveChat(groupId);
-                }
+            } else if (body.leave_group) {
+                await xbot.bot.leaveChat(body.leave_group);
             } else {
                 xbot.bot.processUpdate(body);
             }

@@ -61,26 +61,29 @@ export class XBotService extends BaseTelegramBotService {
                     .entries(this.commandHandlers)
                     .map(([command, { desc }]) => `${command} - ${desc}`).join('\n');
 
-                await this.bot.sendMessage(msg.chat.id, `Available commands:\n${commands}`);
+                await this.sendSafeMessage(msg.chat.id, `Available commands:\n${commands}`, 'XBOT_HELP');
             },
         });
 
         this.addCommand('/ping', {
             desc: 'Ping the bot', cmd: async (msg) => {
-                await this.bot.sendMessage(msg.chat.id, 'Pong!');
+                await this.sendSafeMessage(msg.chat.id, 'Pong!', 'XBOT_PING');
             },
         });
     }
 
-    public async handleCustomTriggers(triggers: string[]): Promise<void> {
-        for (const trigger of triggers) {
+    public async handleBroadcastTriggers(payload: {
+        broadcast_triggers: string[],
+        broadcast_groups: number[]
+    }): Promise<void> {
+        for (const trigger of payload.broadcast_triggers) {
             try {
                 const { data } = await this.handleTrigger(trigger);
 
                 const chunks = splitMessageAtDelimiter(data.join('\n---------- +++ ---------- \n'));
 
                 for (const chunk of chunks) {
-                    await this.announceToGroups(chunk);
+                    await this.announceToGroups(payload.broadcast_groups, chunk);
                 }
 
             } catch (error) {
