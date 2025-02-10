@@ -1,7 +1,6 @@
 import { AuthService } from '@/lib/auth.service';
-import { maskEmail } from '@/lib/emailMasker';
 import { getTimezone, luxon } from '@/lib/localeDate';
-import { Withdrawal } from '@/lib/types';
+import { Payout } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
 interface createMsgInterface {
@@ -24,7 +23,6 @@ export class DataPipeline {
         if (!data?.length) return { data: ['No data found'], options: {} };
 
         const xettleBlc = data.filter(({ id, currency }) => id === 'xettle' && currency === 'inr');
-
         const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
         return {
@@ -34,29 +32,37 @@ export class DataPipeline {
     }
 
     static async getPayoutPartnerAlphaTransactions() {
-        const { data = [] } = await AuthService.get('/admin/withdraws', {
-            limit: 50,
+        const { data = [] } = await AuthService.get('/admin/payout_requests', {
+            limit: 100,
             ordering: 'asc',
-            state: ['processing'],
+            state: ['confirming'],
             type: 'fiat',
-        }) as { data: Withdrawal[]; headers: { total: string } };
+        }) as { data: Payout[]; headers: { total: string } };
+
+        let totalAmount = 0;
 
         const payload = data
-            .filter((i) => i.payment_gateway_name = 'AlphaGateway')
-            .map(({ tid, amount, currency, created_at, email }) => createTextMsg([
-                { label: 'TID', value: '`' + tid + '`', type: 'string' },
-                { label: 'Amount', value: +amount, type: 'number', currency },
-                { label: 'Email', value: maskEmail(email, '.'), type: 'string' },
-                {
-                    label: 'Created At',
-                    value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(),
-                    type: 'date',
-                },
-            ]));
+            .filter((i) => i.gateway_reference_name = 'AlphaGateway')
+            .map(({ tid, amount, currency_id, remote_id, created_at }) => {
+                totalAmount += +amount;
+
+                return createTextMsg([
+                    { label: 'Order Id', value: '`' + tid + '`', type: 'string' },
+                    { label: 'Remote Id', value: '`' + remote_id + '`', type: 'string' },
+                    { label: 'Amount', value: +amount, type: 'number', currency: currency_id },
+                    {
+                        label: 'Created At',
+                        value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(),
+                        type: 'date',
+                    },
+                ]);
+            });
 
         return {
             data: [
-                `*🏦AlphaGateway*\n Pending Transactions: *${formatNumber(+data.length)}*\n`,
+                `*🏦AlphaGateway*
+                \n Processing Orders: *${formatNumber(+data.length)}*
+                \n Order Amount: *${formatNumber(totalAmount)} INR*`,
             ].concat(payload),
             options: {},
         };
