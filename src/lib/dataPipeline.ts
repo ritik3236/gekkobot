@@ -45,7 +45,7 @@ export class DataPipeline {
         const payload = data
             .filter((i) => i.payment_gateway_name = 'AlphaGateway')
             .map(({ tid, amount, currency, created_at, email }) => ([
-                { label: 'TID', value: tid, type: 'string' },
+                { label: 'TID', value: '```' + tid + '```', type: 'string' },
                 { label: 'Amount', value: +amount, type: 'number', currency },
                 { label: 'Email', value: maskEmail(email, '.'), type: 'string' },
                 {
