@@ -21,15 +21,16 @@ export class DataPipeline {
     static async getPayoutPartnerAlphaBalance() {
         const { data } = await AuthService.get('/admin/exchange_balances');
 
-        if (!data?.length) return '❌ No data found';
+        if (!data?.length) return { data: ['No data found'], options: {} };
 
-        const xettleBlc = data.filter(({ id }) => id === 'xettle');
+        const xettleBlc = data.filter(({ id, currency }) => id === 'xettle' && currency === 'inr');
 
-        const payload = xettleBlc.map(({ balance, currency, locked }) => ([
-            { label: 'Total Balance: ', value: +balance + +locked, type: 'number', currency },
-        ]));
+        const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
-        return `AlphaGateway Balance:\n\n${payload.map((data) => createTextMsg(data)).join('\n\n')}`;
+        return {
+            data: [`AlphaGateway Balance:\n*${(+balance + +locked) + ' INR'}*\n`],
+            options: {},
+        };
     }
 
     static async getPayoutPartnerAlphaTransactions() {
@@ -46,10 +47,14 @@ export class DataPipeline {
             .map(({ tid, amount, currency, created_at, email }) => ([
                 { label: 'TID', value: tid, type: 'string' },
                 { label: 'Amount', value: +amount, type: 'number', currency },
-                { label: 'Created At', value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(), type: 'date' },
-                { label: 'Email', value: maskEmail(email), type: 'string' },
+                { label: 'Email', value: maskEmail(email, '.'), type: 'string' },
+                {
+                    label: 'Created At',
+                    value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(),
+                    type: 'date',
+                },
             ]));
 
-        return `AlphaGateway Transactions:\n\nTotal Pending Txn: ${total}\n -----------\n\n${payload.map((data) => createTextMsg(data)).join('\n--- --- --- ---\n\n')}`;
+        return { data: payload.map((data) => createTextMsg(data)), options: { total } };
     }
 }

@@ -73,29 +73,30 @@ export class XBotService extends BaseTelegramBotService {
     public async handleCustomTriggers(triggers: string[]): Promise<void> {
         for (const trigger of triggers) {
             try {
-                const message = await this.generateMessageForTrigger(trigger);
+                const { data } = await this.generateMessageForTrigger(trigger);
 
-                const chunks = splitMessageAtDelimiter(message);
+                for (const message of data) {
+                    const chunks = splitMessageAtDelimiter(message);
 
-                for (const chunk of chunks) {
-                    await this.announceToGroups(chunk);
+                    for (const chunk of chunks) {
+                        await this.announceToGroups(chunk);
+                    }
                 }
 
-                // if message is greater than 4096 chars, split it into multiple messages split from 4096 chars
             } catch (error) {
                 Logger.error('TRIGGER_ERROR', `Failed to process trigger: ${trigger}`, { error }, this.config.botName);
             }
         }
     }
 
-    private async generateMessageForTrigger(trigger: string): Promise<string> {
+    private async generateMessageForTrigger(trigger: string): Promise<{ data: string[], options: any, }> {
         switch (trigger) {
             case 'balance':
                 return DataPipeline.getPayoutPartnerAlphaBalance();
             case 'pending_txns':
                 return DataPipeline.getPayoutPartnerAlphaTransactions();
             default:
-                return `ℹ️ New update: ${trigger}`;
+                return { data: [`ℹ️ New update: \\${trigger}`], options: {} };
         }
     }
 }

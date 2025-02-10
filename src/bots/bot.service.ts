@@ -90,7 +90,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     public async announceToGroups(message: string) {
         try {
             const promises = this.config.chatIds.map(async (chatId) => {
-                await this.bot.sendMessage(chatId, message, {
+                await this.safeSendMessage(chatId, message, 'GROUP_ANNOUNCE', {
                     parse_mode: 'Markdown',
                 });
             });
@@ -239,13 +239,29 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     private async safeSendMessage(
         chatId: number,
         message: string,
-        context: string
+        context: string,
+        options?: TelegramBot.SendMessageOptions
     ): Promise<void> {
         try {
-            await this.bot.sendMessage(chatId, message);
+            await this.bot.sendMessage(chatId, message, options);
             Logger.info(context, `Message sent to ${chatId}`, this.config.botName);
-        } catch (error) {
-            Logger.error(context, error, { chatId, message }, this.config.botName);
+        } catch (_e) {
+            try {
+                await this.bot.sendMessage(chatId, this.escapeTelegramEntities(message), options);
+            } catch (error) {
+                Logger.error(context, error, { message }, this.config.botName);
+            }
         }
+    }
+
+    private escapeTelegramEntities(message: string): string {
+        const entities = ['*', '_', '[', ']', '`'];
+        let escapedMessage = message;
+
+        entities.forEach((entity) => {
+            escapedMessage = escapedMessage.split(entity).join(`\\${entity}`);
+        });
+
+        return escapedMessage;
     }
 }
