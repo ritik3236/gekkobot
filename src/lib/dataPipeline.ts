@@ -35,9 +35,10 @@ export class DataPipeline {
 
     static async getPayoutPartnerAlphaTransactions() {
         const { data = [], headers } = await AuthService.get('/admin/withdraws', {
+            limit: 50,
+            ordering: 'asc',
             state: ['processing'],
             type: 'fiat',
-            limit: 50,
         }) as { data: Withdrawal[]; headers: { total: string } };
 
         const total = headers.total;
