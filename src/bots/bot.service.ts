@@ -97,7 +97,6 @@ export abstract class BaseTelegramBotService extends EventEmitter {
             await Promise.all(promises);
         } catch (error) {
             Logger.error('ANNOUNCEMENT_ERROR', error, this.config.botName);
-            throw error;
         }
     }
 
