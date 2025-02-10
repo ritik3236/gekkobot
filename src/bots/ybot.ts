@@ -1,4 +1,5 @@
 import { BaseTelegramBotService } from '@/bots/bot.service';
+import { DataPipeline } from '@/lib/dataPipeline';
 import { BotConfig } from '@/lib/types';
 
 export class YBotService extends BaseTelegramBotService {
@@ -29,7 +30,9 @@ export class YBotService extends BaseTelegramBotService {
 
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
-                await this.bot.sendMessage(msg.chat.id, 'Balance: 1000 INR');
+                const blc = await DataPipeline.getPayoutPartnerAlphaBalance();
+
+                await this.sendSafeMessage(msg.chat.id, blc[0], 'YBOT_BALANCE');
             },
         });
 

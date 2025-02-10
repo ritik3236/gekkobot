@@ -13,7 +13,7 @@ export const botsConfigs: BotConfig[] = [
         adminChatId: +process.env.TELEGRAM_ADMIN_CHAT_ID,
         botName: 'PayoutY',
         chatIds: [-4644489581, 1282110140],
-        polling: false,
+        polling: true,
         token: process.env.TELEGRAM_BOT_TOKEN_YBOT,
         webhookUrl: 'https://gekkobot-delta.vercel.app/api/telegram/ybot',
     },

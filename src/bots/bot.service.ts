@@ -258,6 +258,10 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         const entities = ['*', '_', '[', ']', '`'];
         let escapedMessage = message;
 
+        if (!message) {
+            return '';
+        }
+
         entities.forEach((entity) => {
             escapedMessage = escapedMessage.split(entity).join(`\\${entity}`);
         });
