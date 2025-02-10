@@ -25,6 +25,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
         await this.registerCommands();
         this.setupListeners();
+        await this.messageListener();
         this.errorListeners();
         this.services.forEach((service) => service.start());
 
@@ -50,7 +51,6 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     private setupListeners(): void {
-        // Handle bot being added/removed from chats
         this.bot.on('my_chat_member', async (msg) => {
             const chat = msg.chat;
             const status = msg.new_chat_member?.status;
@@ -61,11 +61,10 @@ export abstract class BaseTelegramBotService extends EventEmitter {
                 await this.handleBotRemovedFromChat(chat);
             }
         });
+    }
 
-        // Handle regular messages
+    private async messageListener(): Promise<void> {
         this.bot.on('message', async (msg) => {
-            console.log(new Date().toISOString(), msg.text);
-
             if (!this.isAllowedChat(msg.chat.id)) {
                 await this.notifyUnauthorizedChat(msg.chat.id);
 
