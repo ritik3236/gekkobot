@@ -57,7 +57,7 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏦AlphaGateway*\n\n Pending Transactions: *${formatNumber(+total)}*\n`,
+                `*🏦AlphaGateway*\n Pending Transactions: *${formatNumber(+total)}*\n`,
             ].concat(payload),
             options: {},
         };
