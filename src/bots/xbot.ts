@@ -49,7 +49,9 @@ export class XBotService extends BaseTelegramBotService {
 
         this.addCommand('/balance', {
             desc: 'Get balance', cmd: async (msg) => {
-                await this.bot.sendMessage(msg.chat.id, 'Balance: 1000 INR');
+                const blc = await DataPipeline.getPayoutPartnerAlphaBalance();
+
+                await this.sendSafeMessage(msg.chat.id, blc[0], 'XBOT_BALANCE');
             },
         });
 

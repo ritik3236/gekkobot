@@ -90,7 +90,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     public async announceToGroups(message: string) {
         try {
             const promises = this.config.chatIds.map(async (chatId) => {
-                await this.safeSendMessage(chatId, message, 'GROUP_ANNOUNCE', {
+                await this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
                     parse_mode: 'Markdown',
                 });
             });
@@ -165,7 +165,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         Logger.info('BOT_ADDED', `Bot added to chat: ${JSON.stringify(chatDetails)}`, this.config.botName);
 
         // Send welcome message to the chat
-        await this.safeSendMessage(
+        await this.sendSafeMessage(
             chat.id,
             '👋 Hello! Thanks for adding me to this chat. Use /help to see what I can do.',
             'BOT_ADDED_WELCOME'
@@ -177,7 +177,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
             chat: chatDetails,
         }, null, 2);
 
-        await this.safeSendMessage(
+        await this.sendSafeMessage(
             this.config.adminChatId,
             adminMessage,
             'BOT_ADDED_NOTIFICATION'
@@ -200,7 +200,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
             chat: chatDetails,
         }, null, 2);
 
-        await this.safeSendMessage(
+        await this.sendSafeMessage(
             this.config.adminChatId,
             adminMessage,
             'BOT_REMOVED_NOTIFICATION'
@@ -209,7 +209,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
     private async handleCommandError(chatId: number, command: string, error: unknown): Promise<void> {
         Logger.error(`COMMAND_${command.toUpperCase()}`, error, {}, this.config.botName);
-        await this.safeSendMessage(
+        await this.sendSafeMessage(
             chatId,
             '⚠️ An error occurred while processing your request.',
             'COMMAND_ERROR'
@@ -229,14 +229,14 @@ export abstract class BaseTelegramBotService extends EventEmitter {
     }
 
     private async notifyUnauthorizedChat(chatId: number): Promise<void> {
-        await this.safeSendMessage(
+        await this.sendSafeMessage(
             chatId,
             '❌ This bot is not allowed in this chat.',
             'UNAUTHORIZED_ACCESS'
         );
     }
 
-    private async safeSendMessage(
+    public async sendSafeMessage(
         chatId: number,
         message: string,
         context: string,

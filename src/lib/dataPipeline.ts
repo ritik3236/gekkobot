@@ -57,7 +57,7 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏦AlphaGateway*\n\n Total Transactions: *${formatNumber(+total)}*\n`,
+                `*🏦AlphaGateway*\n\n Pending Transactions: *${formatNumber(+total)}*\n`,
                 ...payload.map((data) => createTextMsg(data)),
             ],
         };
