@@ -86,12 +86,18 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         this.services.push(service);
     }
 
-    public announceToGroups(message: string) {
-        this.config.chatIds.map((chatId) => {
-            this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
-                parse_mode: 'Markdown',
+    public async announceToGroups(message: string) {
+        try {
+            const promises = this.config.chatIds.map(async (chatId) => {
+                await this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
+                    parse_mode: 'Markdown',
+                });
             });
-        });
+
+            await Promise.all(promises);
+        } catch (error) {
+            Logger.error('ANNOUNCEMENT_ERROR', error, {}, this.config.botName);
+        }
     }
 
     private errorListeners(): void {
