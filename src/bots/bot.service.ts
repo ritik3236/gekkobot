@@ -29,6 +29,8 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         this.errorListeners();
         this.services.forEach((service) => service.start());
 
+        console.log(this.bot.isPolling());
+
         Logger.info('INIT', 'Bot initialized 🚀', this.config.botName);
     }
 
