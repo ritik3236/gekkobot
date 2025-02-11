@@ -65,3 +65,18 @@ export const formatNumber = (number: string | number, options: Intl.NumberFormat
 
     return formatter.format(+number);
 };
+
+export const escapeTelegramEntities = (message: string | number) => {
+    const entities = ['*', '_', '[', ']', '`', '.', '!', '-', '#', '+', '='];
+    let escapedMessage = message;
+
+    if (!message) {
+        return '';
+    }
+
+    entities.forEach((entity) => {
+        escapedMessage = escapedMessage.toString().split(entity).join(`\\${entity}`);
+    });
+
+    return escapedMessage.toString();
+};

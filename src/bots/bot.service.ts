@@ -4,6 +4,7 @@ import TelegramBot from 'node-telegram-bot-api';
 
 import { Logger } from '@/lib/logger';
 import { BotConfig, BotService } from '@/lib/types';
+import { escapeTelegramEntities } from '@/lib/utils';
 
 export abstract class BaseTelegramBotService extends EventEmitter {
     readonly bot: TelegramBot;
@@ -95,7 +96,7 @@ export abstract class BaseTelegramBotService extends EventEmitter {
 
             await Promise.all(batch.map((chatId) =>
                 this.sendSafeMessage(chatId, message, 'GROUP_ANNOUNCE', {
-                    parse_mode: 'Markdown',
+                    parse_mode: 'MarkdownV2',
                 }).catch((error) => {
                     errors.push(`ANNOUNCEMENT_ERROR: Failed to send to ${chatId}`);
                     Logger.error('ANNOUNCEMENT_ERROR', `Error sending announcement to group: ${chatId}`, this.config.botName, error);
@@ -250,28 +251,19 @@ export abstract class BaseTelegramBotService extends EventEmitter {
         try {
             await this.bot.sendMessage(chatId, message, options);
             Logger.info(context, `Message sent to ${chatId}`, this.config.botName);
-        } catch (_e) {
+        } catch (_error) {
             try {
-                await this.bot.sendMessage(chatId, this.escapeTelegramEntities(message), options);
-            } catch (error) {
-                Logger.error(context, error, this.config.botName, { message });
-                throw error;
+                Logger.warn(context, `Msg Send failed for ${chatId}, trying as markdownV1`, this.config.botName, { message });
+                await this.bot.sendMessage(chatId, message, { parse_mode: 'Markdown' });
+            } catch (_error) {
+                try {
+                    Logger.warn(context, `Msg Send failed for ${chatId}, trying as plain text`, this.config.botName, { message });
+                    await this.bot.sendMessage(chatId, escapeTelegramEntities(message));
+                } catch (error) {
+                    Logger.error(context, error, this.config.botName, { message });
+                    throw error;
+                }
             }
         }
-    }
-
-    private escapeTelegramEntities(message: string): string {
-        const entities = ['*', '_', '[', ']', '`'];
-        let escapedMessage = message;
-
-        if (!message) {
-            return '';
-        }
-
-        entities.forEach((entity) => {
-            escapedMessage = escapedMessage.split(entity).join(`\\${entity}`);
-        });
-
-        return escapedMessage;
     }
 }

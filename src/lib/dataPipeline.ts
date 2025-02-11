@@ -1,7 +1,7 @@
 import { AuthService } from '@/lib/auth.service';
 import { getTimezone, luxon } from '@/lib/localeDate';
 import { Payout } from '@/lib/types';
-import { formatNumber } from '@/lib/utils';
+import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
 
 interface createMsgInterface {
     label: string;
@@ -26,10 +26,10 @@ export class DataPipeline {
         const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
         return {
-            data: [`🏛️ AlphaGateway\n\nTotal Balance:\n*${formatNumber(+balance + +locked, {
+            data: [`*🏛️ AlphaGateway*\n\nTotal Balance:\n||*${escapeTelegramEntities(formatNumber(+balance + +locked, {
                 style: 'currency',
                 currency: 'INR',
-            })}*\n`],
+            }))}*||\n`],
             options: {},
         };
     }
@@ -54,7 +54,7 @@ export class DataPipeline {
                     { label: 'Remote Id', value: '`' + remote_id + '`', type: 'string' },
                     {
                         label: 'Amount',
-                        value: formatNumber(amount, { style: 'currency', currency: currency_id }),
+                        value: escapeTelegramEntities(formatNumber(amount, { style: 'currency', currency: currency_id })),
                         type: 'text',
                     },
                     {
@@ -67,10 +67,10 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏛️ AlphaGateway*\n\nProcessing Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${formatNumber(totalAmount, {
+                `*🏛️ AlphaGateway*\n\nProcessing Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
                     style: 'currency',
                     currency: 'INR',
-                })}*\n`,
+                }))}*\n`,
             ].concat(payload),
             options: {},
         };

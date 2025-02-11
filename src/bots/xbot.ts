@@ -2,6 +2,7 @@ import { BaseTelegramBotService } from '@/bots/bot.service';
 import { DataPipeline } from '@/lib/dataPipeline';
 import { Logger } from '@/lib/logger';
 import { BotConfig } from '@/lib/types';
+import { escapeTelegramEntities } from '@/lib/utils';
 
 function splitMessageAtDelimiter(message: string, delimiter: string = '---', maxLength: number = 4096): string[] {
     if (message.length <= maxLength) {
@@ -82,7 +83,7 @@ export class XBotService extends BaseTelegramBotService {
             try {
                 const { data } = await this.handleTrigger(trigger);
 
-                const chunks = splitMessageAtDelimiter(data.join('\n---------- +++ ---------- \n'));
+                const chunks = splitMessageAtDelimiter(data.join(escapeTelegramEntities('\n---------- +++ ---------- \n')));
 
                 for (const chunk of chunks) {
                     errors.push(...await this.announceToGroups(payload.broadcast_groups, chunk));
