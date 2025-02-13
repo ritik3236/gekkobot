@@ -26,10 +26,10 @@ export class DataPipeline {
         const { balance = 0, locked = 0 } = xettleBlc?.[0] || {};
 
         return {
-            data: [`*🏛️ AlphaGateway*\n\nTotal Balance:\n||*${escapeTelegramEntities(formatNumber(+balance + +locked, {
+            data: [`*🏛️ AlphaGateway*\n\nTotal Balance:\n*${escapeTelegramEntities(formatNumber(+balance + +locked, {
                 style: 'currency',
                 currency: 'INR',
-            }))}*||\n`],
+            }))}*\n`],
             options: {},
         };
     }
