@@ -1,5 +1,6 @@
 import { BaseTelegramBotService } from '@/bots/bot.service';
 import { DataPipeline } from '@/lib/dataPipeline';
+import { luxon } from '@/lib/localeDate';
 import { Logger } from '@/lib/logger';
 import { BotConfig } from '@/lib/types';
 import { escapeTelegramEntities } from '@/lib/utils';
@@ -92,9 +93,17 @@ export class XBotService extends BaseTelegramBotService {
     private async handleTrigger(trigger: string): Promise<{ data: string[], options?: any, }> {
         switch (trigger) {
             case 'balance':
-                return DataPipeline.getPayoutPartnerAlphaBalance();
+                return DataPipeline.getAlphaBalance();
             case 'pending_txn':
-                return DataPipeline.getPayoutPartnerAlphaTransactions();
+                const now = luxon.now().setZone('Asia/Kolkata');
+                const twelveHoursAgo = now.minus({ hours: 12 });
+
+                return DataPipeline.getAlphaTransactions({
+                    state: 'confirming',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'failed_txn':
+                return DataPipeline.getAlphaTransactions({ state: 'failed' });
             default:
                 return { data: [`ℹ️ New update: \\${trigger}`], options: {} };
         }

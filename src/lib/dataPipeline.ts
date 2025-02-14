@@ -1,13 +1,21 @@
 import { AuthService } from '@/lib/auth.service';
-import { getTimezone, luxon } from '@/lib/localeDate';
+import { luxon } from '@/lib/localeDate';
 import { Payout } from '@/lib/types';
-import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
+import { escapeTelegramEntities, fnCapitalize, formatNumber } from '@/lib/utils';
 
 interface createMsgInterface {
     label: string;
     value: string | number;
     type: number | string | 'date';
     currency?: string;
+}
+
+export interface GetAlphaTransactionsPayloadInterface {
+    state: 'confirming' | 'failed' | string;
+    limit?: number;
+    ordering?: 'asc' | 'desc';
+    from?: string;
+    to?: string;
 }
 
 const createTextMsg = (payload: createMsgInterface[]) => {
@@ -17,7 +25,7 @@ const createTextMsg = (payload: createMsgInterface[]) => {
 };
 
 export class DataPipeline {
-    static async getPayoutPartnerAlphaBalance() {
+    static async getAlphaBalance() {
         const { data } = await AuthService.get('/admin/exchange_balances');
 
         if (!data?.length) return { data: ['No data found'], options: {} };
@@ -34,19 +42,21 @@ export class DataPipeline {
         };
     }
 
-    static async getPayoutPartnerAlphaTransactions() {
+    static async getAlphaTransactions(payload: GetAlphaTransactionsPayloadInterface) {
         const { data = [] } = await AuthService.get('/admin/payout_requests', {
-            limit: 100,
-            ordering: 'asc',
-            state: ['confirming'],
+            from: payload.from,
+            limit: payload.limit || 100,
+            ordering: payload.ordering || 'asc',
+            state: [payload.state],
+            to: payload.to,
             type: 'fiat',
         }) as { data: Payout[]; headers: { total: string } };
 
         let totalAmount = 0;
 
-        const payload = data
-            .filter((i) => i.gateway_reference_name = 'AlphaGateway')
-            .map(({ tid, amount = 0, currency_id, remote_id, created_at }) => {
+        const formattedData = data
+            .filter((i) => i.gateway_reference_name === 'AlphaGateway')
+            .map(({ tid, amount = 0, currency_id, remote_id, state: status, created_at }) => {
                 totalAmount += +amount;
 
                 return createTextMsg([
@@ -54,12 +64,16 @@ export class DataPipeline {
                     { label: 'Remote Id', value: '`' + remote_id + '`', type: 'string' },
                     {
                         label: 'Amount',
-                        value: escapeTelegramEntities(formatNumber(amount, { style: 'currency', currency: currency_id })),
+                        value: escapeTelegramEntities(formatNumber(amount, {
+                            style: 'currency',
+                            currency: currency_id,
+                        })),
                         type: 'text',
                     },
+                    { label: 'Status', value: status, type: 'text' },
                     {
                         label: 'Created At',
-                        value: luxon.fromISO(created_at, { zone: getTimezone() }).toRelative(),
+                        value: luxon.fromISO(created_at).toRelative(),
                         type: 'date',
                     },
                 ]);
@@ -67,11 +81,11 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏛️ AlphaGateway*\n\nProcessing Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
+                `*🏛️ AlphaGateway*\n\n${fnCapitalize(payload.state)} Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
                     style: 'currency',
                     currency: 'INR',
                 }))}*\n`,
-            ].concat(payload),
+            ].concat(formattedData),
             options: {},
         };
     }
