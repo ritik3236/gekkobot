@@ -21,6 +21,7 @@ export async function POST(req: NextRequest) {
         Logger.warn('XAPI', 'Unauthorized access attempt', 'XBot', {
             receivedToken: token,
             expectedToken: process.env.TELEGRAM_SECRET_TOKEN ? '***' : 'undefined',
+            body: req.body,
         });
 
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

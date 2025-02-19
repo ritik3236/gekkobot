@@ -81,7 +81,7 @@ export class DataPipeline {
 
         return {
             data: [
-                `*🏛️ AlphaGateway*\n\n${fnCapitalize(payload.state)} Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
+                `*🏛️ AlphaGateway*\n\n${fnCapitalize(payload.state)} Orders: *${formatNumber(+data.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount ?? 0, {
                     style: 'currency',
                     currency: 'INR',
                 }))}*\n`,
