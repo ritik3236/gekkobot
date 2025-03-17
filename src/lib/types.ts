@@ -11,6 +11,14 @@ export interface BotConfig {
     chatIds: number[];
 }
 
+export interface PartnerBalance {
+    balance: string;
+    currency: string;
+    id: string;
+    locked: string;
+    timestamp: number;
+}
+
 export interface Payout {
     id: string;
     uid: string;

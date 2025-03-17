@@ -23,17 +23,6 @@ export const truncateText = (text: string, length: number = 24, direction: 'end'
     }
 };
 
-export const generateRandomId = () => {
-    const characters = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    let randomId = 'payid-';
-
-    for (let i = 0; i < 10; i++) {
-        randomId += characters.charAt(Math.floor(Math.random() * characters.length));
-    }
-
-    return randomId;
-};
-
 const genArrayArg = (key: string, values: any[]): string =>
     values.map((value) => `${key}[]=${encodeURIComponent(value)}`).join('&');
 
@@ -70,7 +59,7 @@ export const escapeTelegramEntities = (message: string | number) => {
     const entities = ['*', '_', '[', ']', '`', '.', '!', '-', '#', '+', '='];
     let escapedMessage = message;
 
-    if (!message) {
+    if (message == null) {
         return '';
     }
 
