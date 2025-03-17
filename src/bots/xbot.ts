@@ -102,12 +102,44 @@ export class XBotService extends BaseTelegramBotService {
                     state: 'confirming',
                     to: twelveHoursAgo.toISO(),
                 });
-
             case 'all_failed_txn':
                 return PayoutService.getAllPayoutPartnersTransactions({
                     state: 'failed',
                 });
-
+            case 'all_pending_txn_overview':
+                return PayoutService.getAllPayoutPartnersTransactionsOverview({
+                    state: 'confirming',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'ssp_pending_txn':
+                return PayoutService.getPayoutPartnerTransactions({
+                    state: 'confirming',
+                    partner: 'SSP_MID1',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'tech_pending_txn':
+                return PayoutService.getPayoutPartnerTransactions({
+                    state: 'confirming',
+                    partner: 'TechGateway',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'all_failed_txn_overview':
+                return PayoutService.getAllPayoutPartnersTransactionsOverview({
+                    state: 'failed',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'ssp_failed_txn':
+                return PayoutService.getPayoutPartnerTransactions({
+                    state: 'failed',
+                    partner: 'SSP_MID1',
+                    to: twelveHoursAgo.toISO(),
+                });
+            case 'tech_failed_txn':
+                return PayoutService.getPayoutPartnerTransactions({
+                    state: 'failed',
+                    partner: 'TechGateway',
+                    to: twelveHoursAgo.toISO(),
+                });
             case 'balance':
                 return DataPipeline.getAlphaBalance();
             case 'pending_txn':

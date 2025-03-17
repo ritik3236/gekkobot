@@ -16,6 +16,7 @@ export interface PayoutPayloadInterface {
     ordering?: 'asc' | 'desc';
     from?: string;
     to?: string;
+    partner?: string;
 }
 
 const createTextMsg = (payload: createMsgInterface[]) => {
@@ -24,11 +25,11 @@ const createTextMsg = (payload: createMsgInterface[]) => {
     ).join('\n');
 };
 
-const payoutPartners = {
+const PAYOUT_PARTNERS = {
     'SSP_MID1': '\\#1 SSPMID1',
     'TechGateway': '\\#2 TechGateway',
-    'Xettel': '\\#4 Xettle',
-    's2_pay': '\\#3 SSPMID1',
+    'Xettel': '\\#3 Xettle',
+    's2_pay': '\\#1 SSPMID1',
 };
 
 export class PayoutService {
@@ -46,12 +47,12 @@ export class PayoutService {
 
     static async getAllPayoutPartnersBalance() {
         const data = await this.fetchBalances();
-        const blc = this.filterPartnerBalances(data, payoutPartners);
+        const blc = this.filterPartnerBalances(data, PAYOUT_PARTNERS);
 
         if (!blc.length) return { data: ['Partners Balance: No partners found'], options: {} };
 
         const messageLines = blc.map(({ id, balance = 0, locked = 0 }) => {
-            const partnerName = payoutPartners[id];
+            const partnerName = PAYOUT_PARTNERS[id];
             const total = +balance + +locked;
 
             return `*${partnerName}*: ${escapeTelegramEntities(
@@ -80,9 +81,13 @@ export class PayoutService {
     }
 
     // Filter transactions for valid payout partners
-    static filterPartnerTransactions(transactions: Payout[], payoutPartners: Record<string, string>) {
+    static filterPartnerTransactions(transactions: Payout[], partner_key?: string) {
+        if (partner_key){
+            return transactions.filter((transaction) => [partner_key].includes(transaction.gateway_reference_name))
+        }
+
         return transactions.filter((transaction) =>
-            Object.keys(payoutPartners).includes(transaction.gateway_reference_name)
+            Object.keys(PAYOUT_PARTNERS).includes(transaction.gateway_reference_name)
         );
     }
 
@@ -131,7 +136,7 @@ export class PayoutService {
         const totalAmount = transactions.reduce((sum, { amount }) => sum + +amount, 0.0);
 
         return [
-            `*${partnerName}*\n\n${fnCapitalize(state)} Orders: *${formatNumber(transactions.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
+            `*${partnerName} ${fnCapitalize(state)} Txn*\n\n${fnCapitalize(state)} Orders: *${formatNumber(transactions.length)}*\nOrder Amount: *${escapeTelegramEntities(formatNumber(totalAmount, {
                 style: 'currency',
                 currency: 'INR',
             }))}*\n`,
@@ -150,11 +155,34 @@ export class PayoutService {
         ];
     }
 
+    static async getAllPayoutPartnersTransactionsOverview(payload: PayoutPayloadInterface) {
+        const transactions = await this.fetchTransactions(payload);
+        const partnerTransactions = this.filterPartnerTransactions(transactions);
+        const overallSummary = this.generateOverallSummary(partnerTransactions, payload.state);
+
+        return {
+            data: overallSummary,
+            options: {},
+        };
+    }
+
+    static async getPayoutPartnerTransactions(payload: PayoutPayloadInterface) {
+        const transactions = await this.fetchTransactions(payload);
+        const partnerTransactions = this.filterPartnerTransactions(transactions, payload.partner);
+
+        const formattedData = this.generatePartnerSummary(PAYOUT_PARTNERS[payload.partner], partnerTransactions, payload.state);
+
+        return {
+            data: formattedData,
+            options: {},
+        };
+    }
+
     // Main function to get all payout partners' transactions
     static async getAllPayoutPartnersTransactions(payload: PayoutPayloadInterface) {
         const transactions = await this.fetchTransactions(payload);
-        const partnerTransactions = this.filterPartnerTransactions(transactions, payoutPartners);
-        const transactionsByPartner = this.groupTransactionsByPartner(partnerTransactions, payoutPartners);
+        const partnerTransactions = this.filterPartnerTransactions(transactions);
+        const transactionsByPartner = this.groupTransactionsByPartner(partnerTransactions, PAYOUT_PARTNERS);
         const overallSummary = this.generateOverallSummary(partnerTransactions, payload.state);
 
         const formattedData = Object.entries(transactionsByPartner)
