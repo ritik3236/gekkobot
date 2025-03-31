@@ -6,6 +6,10 @@ const nextConfig = {
         // your project has ESLint errors.
         ignoreDuringBuilds: true,
     },
+    serverExternalPackages: ['tesseract.js'],
+    outputFileTracingIncludes: {
+        '/api/**/*': ['./node_modules/**/*.wasm', './node_modules/**/*.proto']
+    }
 }
 
 module.exports = nextConfig;
