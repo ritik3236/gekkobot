@@ -31,7 +31,7 @@ OCRBot.bot.command('refund', async (ctx) => {
     }
 
     try {
-        const response = await axios.get(`${process.env.VERCEL_URL}/api/refunds/${uniqueId}`);
+        const response = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${uniqueId}`);
         const refund = response.data.data;
 
         const message = `

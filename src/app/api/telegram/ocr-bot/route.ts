@@ -6,7 +6,7 @@ import { recordRefund } from '@/lib/db/refund';
 import { OCRBot } from '@/lib/telegram/bot-instances';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
 
-const BASE_URL: string = process.env.VERCEL_URL || 'http://localhost:3000';
+const BASE_URL: string = process.env.VERCEL_BASE_URL || 'http://localhost:3000';
 
 // Background processing function
 async function processImageInBackground(chatId: number, fileId: string) {
