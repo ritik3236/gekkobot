@@ -42,3 +42,21 @@ export interface Payout {
     created_at: string;
     updated_at: string;
 }
+
+export interface RefundOCRFields {
+    uniqueId: string;
+    txnDate?: string;
+    name?: string;
+    amount?: string;
+    refundUtr?: string;
+}
+
+export interface RefundRequest {
+    ocrText: string;
+    uniqueId: string;
+    txnDate: string;
+    name: string;
+    amount: string;
+    refundUtr: string;
+    fileUrl: string;
+}

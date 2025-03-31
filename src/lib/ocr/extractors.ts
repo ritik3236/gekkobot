@@ -1,41 +1,16 @@
-export function extractDate(text: string): Date {
-    const patterns = [
-        /\b(\d{2}-\d{2}-\d{4})\b/, // DD-MM-YYYY
-        /\b(\d{4}-\d{2}-\d{2})\b/, // YYYY-MM-DD
-        /\b(\d{2}\/\d{2}\/\d{4})\b/, // DD/MM/YYYY
-    ];
+import { RefundOCRFields } from '@/lib/types';
 
-    for (const pattern of patterns) {
-        const match = text.match(pattern);
+export const extractOcrFields = (text: string): RefundOCRFields => {
+    // Dear Customer,
+    // An amount of INR 6,79,040.32 has been credited to your A/C. No. XX0392 on 12-MAR-2025 11:44:50 on account of RTGS-Return-YESBR12025031200013998-Rohit Kumar So Houshila P-CREDIT TO NRI ACCOUNT/R12/CREDIT TO NRI ACC.
 
-        if (match) return new Date(match[0]);
-    }
+    const escapeText = text.replace(/\n/g, ' ').replace(/[\r,]/g, '');
 
-    return new Date(); // Fallback to current date
-}
-
-export function extractAmount(text: string): number {
-    const amountMatch = text.match(
-        /(?:₹|RS?|INR)\s*([\d,]+(?:\.\d{1,2})?)/i
-    );
-
-    if (!amountMatch) return 0;
-
-    return parseFloat(
-        amountMatch[1].replace(/,/g, '')
-    );
-}
-
-export function extractUTR(text: string): string {
-    return text.match(
-        /(?:UTR|Ref\.? No\.?|Transaction ID)\s*[:]?\s*([A-Z0-9]{10,16})/i
-    )?.[1]?.toUpperCase() || 'NOT_FOUND';
-}
-
-export function extractName(text: string): string {
-    const nameMatch = text.match(
-        /(?:Beneficiary|Name)\s*[:]?\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i
-    );
-
-    return nameMatch?.[1]?.trim() || 'Unknown';
-}
+    return {
+        amount: escapeText.match(/(?<=of\s(?:INR?|IN)\s)[\d.,\s]+\.\d{2}(?=\shas)/i)?.[0]?.trim()?.replace(/\.(?=.*\.)/g, ''),
+        txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim(),
+        name: escapeText.match(/YESBR\w+-\s*([^-]+)/i)?.[1]?.trim(),
+        refundUtr: escapeText.match(/YESBR\w+/)?.[0],
+        uniqueId: escapeText.match(/YESBR\w+/)?.[0],
+    };
+};

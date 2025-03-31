@@ -1,106 +1,68 @@
-import TelegramBot from 'node-telegram-bot-api';
+import { ParseMode } from '@grammyjs/types';
+import { Bot } from 'grammy';
 
-export type TelegramMessage = {
-    chat: {
-        id: number
-    }
-    message_id: number
-    photo?: { file_id: string }[]
-};
+import { Logger } from '@/lib/logger';
+import { escapeTelegramEntities } from '@/lib/utils';
 
-export class TelegramBotService {
-    private static instance: TelegramBot;
-    private static isInitialized = false;
+export class TelegramBot {
+    private readonly TELEGRAM_ENDPOINT = 'https://api.telegram.org';
+    private readonly TELEGRAM_BOT_API: string;
+    private readonly TELEGRAM_FILE_API: string;
+    private readonly botName: string;
+    public bot: Bot;
 
-    public static get bot(): TelegramBot {
-        if (!TelegramBotService.instance) {
-            if (!process.env.TELEGRAM_BOT_TOKEN_OCR_BOT) {
-                throw new Error('TELEGRAM_BOT_TOKEN is not defined');
-            }
-
-            TelegramBotService.instance = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN_OCR_BOT, {
-                webHook: process.env.NODE_ENV === 'production' ? {
-                    host: process.env.HOST || '0.0.0.0',
-                    port: parseInt(process.env.PORT || '3000'),
-                } : undefined,
-            });
-
-            if (process.env.NODE_ENV === 'development') {
-                TelegramBotService.instance.startPolling();
-            }
-
-            this.setupErrorHandling();
+    constructor(token: string) {
+        if (!token) {
+            throw new Error('Telegram bot token is not defined');
         }
 
-        return TelegramBotService.instance;
+        this.TELEGRAM_BOT_API = `${this.TELEGRAM_ENDPOINT}/bot${token}`;
+        this.TELEGRAM_FILE_API = `${this.TELEGRAM_ENDPOINT}/file/bot${token}`;
+        this.bot = new Bot(token);
+        this.botName = 'BotNoName';
     }
 
-    private static setupErrorHandling(): void {
-        this.instance.on('polling_error', (error) => {
-            console.error('Polling error:', error);
-        });
-
-        this.instance.on('webhook_error', (error) => {
-            console.error('Webhook error:', error);
-        });
-    }
-
-    public static async initializeWebhook(): Promise<void> {
-        if (this.isInitialized || process.env.NODE_ENV !== 'production') return;
-
+    async sendMessage(
+        chatId: number,
+        message: string,
+        context: string = 'OCR_BOT',
+        options?: { parse_mode?: ParseMode; disable_web_page_preview?: boolean }
+    ): Promise<void> {
         try {
-            await this.bot.setWebHook(
-                `${process.env.NEXTAUTH_URL}/api/telegram/webhook`,
-                {
-                    max_connections: 40,
-                    allowed_updates: ['message'],
+            await this.sendMsg(chatId, message, options);
+            Logger.info(context, `Message sent to ${chatId}`, this.botName);
+        } catch (_error) {
+            try {
+                Logger.warn(context, `Msg Send failed for ${chatId}, trying as markdownV1`, this.botName, { message });
+                await this.sendMsg(chatId, message, { parse_mode: 'MarkdownV1' });
+            } catch (_error) {
+                try {
+                    Logger.warn(context, `Msg Send failed for ${chatId}, trying as plain text`, this.botName, { message });
+                    await this.sendMsg(chatId, escapeTelegramEntities(message));
+                } catch (error) {
+                    Logger.error(context, error, this.botName, { message });
+                    throw error;
                 }
-            );
-            this.isInitialized = true;
-            console.log('Webhook configured successfully');
+            }
+        }
+    }
+
+    async sendMsg(chatId: number, text: string, options?): Promise<void> {
+        await this.bot.api.sendMessage(chatId, text, { ...options });
+    }
+
+    async sendPhoto(chatId: number, photo: string): Promise<void> {
+        await this.bot.api.sendPhoto(chatId, photo);
+    }
+
+    async getFileUrl(fileId: string): Promise<string> {
+        try {
+            const { file_path } = await this.bot.api.getFile(fileId);
+
+            return `${this.TELEGRAM_FILE_API}/${file_path}`;
         } catch (error) {
-            console.error('Webhook setup failed:', error);
+            console.error('Error getting file URL:', error);
             throw error;
         }
-    }
-
-    public static async sendProcessingMessage(chatId: number): Promise<void> {
-        await this.bot.sendChatAction(chatId, 'typing');
-        await this.bot.sendMessage(
-            chatId,
-            '🔄 Processing your refund image...',
-            { parse_mode: 'Markdown' }
-        );
-    }
-
-    public static async sendResultMessage(
-        chatId: number,
-        replyToMessageId: number,
-        record: any
-    ): Promise<void> {
-        const message = `
-✅ *Refund Processed Successfully*
-━━━━━━━━━━━━━━
-• *Date*: ${record.date.toLocaleDateString()}
-• *Name*: ${record.name}
-• *Amount*: ₹${record.amount.toLocaleString()}
-• *UTR*: \`${record.utr}\`
-    `.trim();
-
-        await this.bot.sendMessage(chatId, message, {
-            reply_to_message_id: replyToMessageId,
-            parse_mode: 'MarkdownV2',
-        });
-    }
-
-    public static async sendErrorMessage(
-        chatId: number,
-        replyToMessageId: number
-    ): Promise<void> {
-        await this.bot.sendMessage(
-            chatId,
-            '❌ Failed to process refund image',
-            { reply_to_message_id: replyToMessageId }
-        );
     }
 }

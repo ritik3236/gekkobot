@@ -78,7 +78,7 @@ module.exports = {
         'jsx-a11y/click-events-have-key-events': 'warn',
         'jsx-a11y/interactive-supports-focus': 'warn',
 
-        'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
+        // 'no-console': ['error', { allow: ['warn', 'error', 'info'] }],
 
         'sort-keys': ['warn', 'asc', { minKeys: 4, allowLineSeparatedGroups: true }],
         'unused-imports/no-unused-imports': 'error',
