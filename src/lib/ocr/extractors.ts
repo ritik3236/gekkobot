@@ -8,7 +8,7 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
 
     return {
         amount: escapeText.match(/(?<=of\s(?:INR?|IN)\s)[\d.,\s]+\.\d{2}(?=\shas)/i)?.[0]?.trim()?.replace(/\.(?=.*\.)/g, ''),
-        txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim(),
+        txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', ''),
         name: escapeText.match(/YESBR\w+-\s*([^-]+)/i)?.[1]?.trim(),
         refundUtr: escapeText.match(/YESBR\w+/)?.[0],
         uniqueId: escapeText.match(/YESBR\w+/)?.[0],

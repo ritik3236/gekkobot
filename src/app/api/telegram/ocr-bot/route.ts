@@ -26,12 +26,12 @@ async function processImageInBackground(chatId: number, fileId: string) {
         await OCRBot.sendMessage(chatId, 'Refund Record added successfully', 'OCR_BOT');
 
         const msgPayload = {
-            '\\- Unique Id': fields.uniqueId,
+            '*Id*': fields.uniqueId,
 
-            '\\- Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
-            '\\- Name': escapeTelegramEntities(fields.name),
-            '\\- Refund Utr': fields.refundUtr,
-            '\\- Transaction Date': escapeTelegramEntities(fields.txnDate),
+            '*Amount*': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
+            '*Name*': escapeTelegramEntities(fields.name),
+            '*Refund Utr*': fields.refundUtr,
+            '*Transaction Date*': escapeTelegramEntities(fields.txnDate),
         };
 
         const msg = Object.entries(msgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
