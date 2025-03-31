@@ -28,11 +28,11 @@ async function processImageInBackground(chatId: number, fileId: string) {
         await OCRBot.sendMessage(chatId, 'OCR text:\n```' + ocrText + '```', 'OCR_BOT', { parse_mode: 'MarkdownV2' });
 
         const msgPayload = {
-            '\\- *Id*': fields.uniqueId,
+            '\\- *Id*': '`' + fields.uniqueId + '`',
 
             '\\- *Amount*': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
             '\\- *Name*': escapeTelegramEntities(fields.name),
-            '\\- *Refund Utr*': fields.refundUtr,
+            '\\- *Refund Utr*': '`' + fields.refundUtr + '`',
             '\\- *Transaction Date*': escapeTelegramEntities(fields.txnDate),
         };
 
