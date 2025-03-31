@@ -25,6 +25,8 @@ async function processImageInBackground(chatId: number, fileId: string) {
         await recordRefund({ ocrText: ocrText, fileUrl, ...fields });
         await OCRBot.sendMessage(chatId, 'Refund Record added successfully', 'OCR_BOT');
 
+        await OCRBot.sendMessage(chatId, 'OCR text:\n```' + ocrText + '```', 'OCR_BOT', { parse_mode: 'MarkdownV2' });
+
         const msgPayload = {
             '\\- *Id*': fields.uniqueId,
 
