@@ -92,7 +92,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         await OCRBot.sendMessage(chatId, 'Image received, processing in background...', 'OCR_BOT');
 
         // Start background processing without awaiting it
-        processImageInBackground(chatId, fileId).catch((err) => {
+        await processImageInBackground(chatId, fileId).catch((err) => {
             console.error('Background process failed:', err);
         });
 
