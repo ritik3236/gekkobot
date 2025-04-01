@@ -12,7 +12,7 @@ interface DbConfig {
 }
 
 interface RefundData {
-    uniqueId: string;
+    eid: string;
     ocrText: string;
     txnDate?: string | null;
     name: string | null;
@@ -60,19 +60,19 @@ export class Database {
         const db = await this.getDb();
 
         await db.insert(schema.bankRefunds).values(payload);
-        console.log('Refund recorded:', payload.uniqueId);
+        console.log('Refund recorded:', payload.eid);
     }
 
-    async getRefundById(uniqueId: string): Promise<schema.BankRefund | undefined> {
+    async getRefundById(eid: string): Promise<schema.BankRefund | undefined> {
         try {
             const db = await this.getDb();
             const result = await db
                 .select()
                 .from(schema.bankRefunds)
-                .where(eq(schema.bankRefunds.uniqueId, uniqueId))
+                .where(eq(schema.bankRefunds.eid, eid))
                 .limit(1);
 
-            console.log('Refund retrieved:', uniqueId, result[0]);
+            console.log('Refund retrieved:', eid, result[0]);
 
             return result[0];
         } catch (error) {

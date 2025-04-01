@@ -11,6 +11,6 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
         txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', ''),
         name: escapeText.match(/YESBR\w+-\s*([^-]+)/i)?.[1]?.trim(),
         refundUtr: escapeText.match(/YESBR\w+/)?.[0],
-        uniqueId: escapeText.match(/YESBR\w+/)?.[0],
+        eid: escapeText.match(/YESBR\w+/)?.[0],
     };
 };

@@ -2,6 +2,7 @@ import * as process from 'node:process';
 
 import axios from 'axios';
 
+import { processImageInBackground } from '@/lib/db/refund';
 import { TelegramBot } from '@/lib/telegram/bot';
 
 // Bot 1 (e.g., your existing OCR bot)
@@ -22,21 +23,21 @@ OCRBot.bot.command('ping', (ctx) => {
 });
 
 OCRBot.bot.command('refund', async (ctx) => {
-    const uniqueId = ctx.message?.text?.split(' ')[1]; // Extract uniqueId from command (e.g., "/refund 123")
+    const eid = ctx.message?.text?.split(' ')[1]; // Extract eid from command (e.g., "/refund 123")
 
-    if (!uniqueId) {
-        await ctx.reply('Please provide a uniqueId. Usage: /refund <uniqueId>');
+    if (!eid) {
+        await ctx.reply('Please provide a eid. Usage: /refund <eid>');
 
         return;
     }
 
     try {
-        const response = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${uniqueId}`);
+        const response = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${eid}`);
         const refund = response.data.data;
 
         const message = `
 Refund Details:
-- Unique ID: ${refund.uniqueId}
+- Unique ID: ${refund.eid}
 - Amount: ${refund.amount}
 - Name: ${refund.name}
 - Refund UTR: ${refund.refundUtr}
@@ -46,10 +47,17 @@ Refund Details:
         await ctx.reply(message);
     } catch (error) {
         if (error.response?.status === 404) {
-            await ctx.reply(`Refund with uniqueId ${uniqueId} not found`);
+            await ctx.reply(`Refund with eid ${eid} not found`);
         } else {
             console.error('Error fetching refund:', error);
             await ctx.reply('Error fetching refund details');
         }
     }
+});
+
+OCRBot.bot.on('message:photo', async (ctx) => {
+    const photo = ctx.message.photo[ctx.message.photo.length - 1];
+    const fileId = photo.file_id;
+
+    await processImageInBackground(ctx.message.chat.id, fileId, ctx);
 });

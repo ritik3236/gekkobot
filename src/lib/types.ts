@@ -44,7 +44,7 @@ export interface Payout {
 }
 
 export interface RefundOCRFields {
-    uniqueId: string;
+    eid: string;
     txnDate?: string;
     name?: string;
     amount?: string;
@@ -53,7 +53,7 @@ export interface RefundOCRFields {
 
 export interface RefundRequest {
     ocrText: string;
-    uniqueId: string;
+    eid: string;
     txnDate: string;
     name: string;
     amount: string;

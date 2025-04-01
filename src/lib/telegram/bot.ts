@@ -6,7 +6,6 @@ import { escapeTelegramEntities } from '@/lib/utils';
 
 export class TelegramBot {
     private readonly TELEGRAM_ENDPOINT = 'https://api.telegram.org';
-    private readonly TELEGRAM_BOT_API: string;
     private readonly TELEGRAM_FILE_API: string;
     private readonly botName: string;
     public bot: Bot;
@@ -16,7 +15,6 @@ export class TelegramBot {
             throw new Error('Telegram bot token is not defined');
         }
 
-        this.TELEGRAM_BOT_API = `${this.TELEGRAM_ENDPOINT}/bot${token}`;
         this.TELEGRAM_FILE_API = `${this.TELEGRAM_ENDPOINT}/file/bot${token}`;
         this.bot = new Bot(token);
         this.botName = 'BotNoName';

@@ -9,7 +9,7 @@ export const bankRefunds = mysqlTable('bank_refunds', {
     ocrText: text('ocr_text').notNull(),
     refundUtr: varchar('utr', { length: 255 }),
     txnDate: varchar('txn_date', { length: 50 }),
-    uniqueId: varchar('unique_id', { length: 255 }).notNull().unique(),
+    eid: varchar('eid', { length: 255 }).notNull().unique(),
 });
 
 export type BankRefund = typeof bankRefunds.$inferSelect;

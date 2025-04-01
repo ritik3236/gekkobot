@@ -19,7 +19,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         await worker.terminate();
         const fields = extractOcrFields(text);
 
-        console.log(fields, '=========');
+        console.log('==== OCR TEXT ====', fields, '=========');
 
         return NextResponse.json({ ocrText: text, fields });
     } catch (error) {
