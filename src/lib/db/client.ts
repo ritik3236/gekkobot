@@ -28,10 +28,10 @@ export class Database {
 
     constructor() {
         this.dbConfig = {
-            host: process.env.DB_HOST || 'data-record.cbmwccaeejw6.ap-south-1.rds.amazonaws.com',
-            user: process.env.DB_USER || 'dev',
-            password: process.env.DB_PASSWORD || '836d69b8f15091445a2',
-            database: process.env.DB_NAME || 'test',
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
         };
     }
 
