@@ -57,10 +57,14 @@ export class Database {
     // --- Bank_Refunds Methods ---
 
     async recordRefund(payload: RefundData): Promise<schema.BankRefund> {
+        const existingRefund = await this.getRefundByEid(payload.eid);
+
+        if (existingRefund) {
+            throw new Error(`Refund with UTR ${payload.eid} already exists`);
+        }
+
         try {
-
             const db = await this.getDb();
-
             const res = await db.insert(schema.bankRefunds).values(payload);
             const insertedId = res[0].insertId;
 
@@ -69,6 +73,23 @@ export class Database {
             return { id: insertedId, ...payload, createdAt: new Date() };
         } catch (error) {
             console.error('Error recording refund:', error);
+            throw error;
+        }
+    }
+
+    async getRefundByEid(eid: string): Promise<schema.BankRefund | undefined> {
+        try {
+            const db = await this.getDb();
+            const result = await db
+                .select()
+                .from(schema.bankRefunds)
+                .where(eq(schema.bankRefunds.eid, eid));
+
+            console.log('Refund retrieved:', eid, result[0]);
+
+            return result[0];
+        } catch (error) {
+            console.error('Error retrieving refund:', error);
             throw error;
         }
     }

@@ -52,7 +52,7 @@ export async function processImageInBackground(chatId: number, fileId: string, c
 
             'Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
             'Name': escapeTelegramEntities(fields.name),
-            'Refund Utr': fields.refundUtr,
+            'Refund UTR': fields.refundUtr,
             'Transaction Date': escapeTelegramEntities(fields.txnDate),
         };
 

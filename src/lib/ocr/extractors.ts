@@ -4,6 +4,18 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
     // Dear Customer,
     // An amount of INR 6,79,040.32 has been credited to your A/C. No. XX0392 on 12-MAR-2025 11:44:50 on account of RTGS-Return-YESBR12025031200013998-Rohit Kumar So Houshila P-CREDIT TO NRI ACCOUNT/R12/CREDIT TO NRI ACC.
 
+    //TODO: Remove temp solution
+
+    if (!text || !text.includes('credit')) {
+        return {
+            amount: '',
+            txnDate: '',
+            name: '',
+            refundUtr: '',
+            eid: '',
+        };
+    }
+
     const escapeText = text.replace(/\n/g, ' ').replace(/[\r,]/g, '');
 
     console.log(text, escapeText, '=====');
