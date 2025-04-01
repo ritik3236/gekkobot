@@ -58,19 +58,19 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         await recordRefund({ ocrText: ocrText, fileUrl, ...fields });
 
         const msgPayload = {
-            '- Id': '`' + fields.eid + '`',
+            'Id': '`' + fields.eid + '`',
 
-            '- Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
-            '- Name': escapeTelegramEntities(fields.name),
-            '- Refund Utr': '`' + fields.refundUtr + '`',
-            '- Transaction Date': escapeTelegramEntities(fields.txnDate),
+            'Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
+            'Name': escapeTelegramEntities(fields.name),
+            'Refund Utr': '`' + fields.refundUtr + '`',
+            'Transaction Date': escapeTelegramEntities(fields.txnDate),
         };
 
         const msg = Object.entries(msgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
 
         const successMessage = 'Refund Recorded Successfully 🎉\n' +
             'OCR text:\n```' + ocrText + '```\n' +
-            'Refund details:\n```-' + msg + '```';
+            'Refund details:\n```' + msg + '```';
 
         // Step 5: Send success message
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });
