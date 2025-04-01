@@ -59,7 +59,7 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         const msg = Object.entries(msgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
 
         const successMessage = 'Refund Recorded Successfully 🎉\n\n' +
-            '```Refund_Details:\n' + msg + '```\n' + 'id\\: ```' + refund.id + '```\n' + '```' + refund.refundUtr + '```';
+            '```Refund_Details:\n' + msg + '```\n' + '```' + refund.id + '```\n' + '```' + refund.refundUtr + '```';
 
         // Step 5: Send success message
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });
