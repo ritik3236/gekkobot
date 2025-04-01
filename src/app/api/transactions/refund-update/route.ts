@@ -16,8 +16,7 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         const { name, amount } = await dbInstance.getRefundByEid(refund_uuid);
 
-        console.log('Transaction name:', name, 'Amount:', amount);
-        const transaction = await dbInstance.getTransactionByNameAndAmount('Ritik', '309779.09');
+        const transaction = await dbInstance.getTransactionByNameAndAmount(name, amount);
 
         if (!transaction) {
             return NextResponse.json({ error: 'Transaction not found' }, { status: 200 });
