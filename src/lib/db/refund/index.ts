@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { dbInstance } from '@/lib/db/client';
+import { Transaction } from '@/lib/db/schema';
 import { OCRBot } from '@/lib/telegram/bot-instances';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
@@ -61,11 +62,42 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         const successMessage = 'Refund Recorded Successfully 🎉\n\n' +
             '```Refund_Details:\n' + msg + '```\n' + '```' + refund.id + '```\n' + '```' + refund.refundUtr + '```';
 
-        // Step 5: Send success message
+        // Step 6: Trigger refund update
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });
+
+        const transactionResponse = await axios.post(`${process.env.VERCEL_BASE_URL}/api/transactions/refund-update`, { refund_uuid: refund.uuid });
+
+        const transaction = transactionResponse.data.data as Transaction;
+        const transactionError = transactionResponse.data.error;
+
+        if (!transaction || transactionError) {
+            await ctx.reply(`Error: ${transactionError}`);
+
+            return;
+        }
+
+        const transactionMsgPayload = {
+            'Id': transaction.id,
+            'S.No': transaction.sNo,
+            'File': transaction.fileName,
+            'Amount': escapeTelegramEntities(formatNumber(transaction.amount, {
+                style: 'currency',
+                currency: 'INR',
+            })),
+            'Account No': transaction.accountNumber,
+            'Name': escapeTelegramEntities(transaction.accountHolderName),
+            'Status': escapeTelegramEntities(transaction.status),
+        };
+
+        const transactionMsg = Object.entries(transactionMsgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
+
+        const transactionSuccessMessage = 'Transaction Updated Successfully 🎉\n\n' +
+            '```Transaction_Details:\n' + transactionMsg + '```\n' + '```' + transaction.id + '```';
+
+        await ctx.api.editMessageText(chatId, messageId, successMessage + '\n\n' + transactionSuccessMessage, { parse_mode: 'MarkdownV2' });
 
     } catch (error) {
         console.error('Error in background processing:', error);
-        await ctx.api.editMessageText(chatId, messageId, error.message || 'Error processing image');
+        await ctx.reply(error.message || 'Error processing image');
     }
 }

@@ -12,19 +12,19 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
             txnDate: '',
             name: '',
             refundUtr: '',
-            eid: '',
+            uuid: '',
         };
     }
 
     const escapeText = text.replace(/\n/g, ' ').replace(/[\r,]/g, '');
 
-    console.log(text, escapeText, '=====');
+    console.log('======', text, escapeText, '=====');
 
     return {
         amount: escapeText.match(/(?<=of\s(?:INR?|IN)\s)[\d.,\s]+\.\d{2}(?=\shas)/i)?.[0]?.trim()?.replace(/\.(?=.*\.)/g, ''),
         txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', ''),
-        name: escapeText.match(/YES\w+-\s*([^-]+)/i)?.[1]?.trim(),
+        name: escapeText.match(/YES\w+-\s*([^-]+)/i)?.[1]?.trim()?.toUpperCase(),
         refundUtr: escapeText.match(/YES\w+/)?.[0],
-        eid: escapeText.match(/YES\w+/)?.[0],
+        uuid: escapeText.match(/YES\w+/)?.[0],
     };
 };

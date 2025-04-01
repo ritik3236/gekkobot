@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
@@ -12,13 +12,18 @@ interface DbConfig {
 }
 
 interface RefundData {
-    eid: string;
+    uuid: string;
     ocrText: string;
     txnDate: string | null;
     name: string | null;
     amount: string | null;
     fileUrl: string | null;
     refundUtr: string | null;
+}
+
+interface TransactionUpdateData {
+    id: number;
+    status: string;
 }
 
 export class Database {
@@ -57,35 +62,32 @@ export class Database {
     // --- Bank_Refunds Methods ---
 
     async recordRefund(payload: RefundData): Promise<schema.BankRefund> {
-        const existingRefund = await this.getRefundByEid(payload.eid);
+        const existingRefund = await this.getRefundByEid(payload.uuid);
 
         if (existingRefund) {
-            throw new Error(`Refund with UTR ${payload.eid} already exists`);
+            throw new Error(`Refund with UTR ${payload.uuid} already exists`);
         }
 
         try {
             const db = await this.getDb();
-            const res = await db.insert(schema.bankRefunds).values(payload);
-            const insertedId = res[0].insertId;
+            const [res] = await db.insert(schema.bankRefunds).values(payload);
 
-            console.log('Refund recorded:', { id: insertedId });
+            console.log('Refund recorded:', { id: res.insertId });
 
-            return { id: insertedId, ...payload, createdAt: new Date() };
+            return { id: res.insertId, ...payload, createdAt: new Date() };
         } catch (error) {
             console.error('Error recording refund:', error);
             throw error;
         }
     }
 
-    async getRefundByEid(eid: string): Promise<schema.BankRefund | undefined> {
+    async getRefundByEid(uuid: string): Promise<schema.BankRefund | undefined> {
         try {
             const db = await this.getDb();
             const result = await db
                 .select()
                 .from(schema.bankRefunds)
-                .where(eq(schema.bankRefunds.eid, eid));
-
-            console.log('Refund retrieved:', eid, result[0]);
+                .where(eq(schema.bankRefunds.uuid, uuid));
 
             return result[0];
         } catch (error) {
@@ -102,8 +104,6 @@ export class Database {
                 .from(schema.bankRefunds)
                 .where(eq(schema.bankRefunds.id, +id));
 
-            console.log('Refund retrieved:', id, result[0]);
-
             return result[0];
         } catch (error) {
             console.error('Error retrieving refund:', error);
@@ -114,16 +114,69 @@ export class Database {
     async getAllRefunds(): Promise<schema.BankRefund[]> {
         try {
             const db = await this.getDb();
-            const result = await db.select().from(schema.bankRefunds);
 
-            console.log('All refunds retrieved:', result);
-
-            return result;
+            return await db.select().from(schema.bankRefunds);
         } catch (error) {
             console.error('Error retrieving all refunds:', error);
             throw error;
         }
     }
+
+    // --- Transactions Methods ---
+
+    async getTransactionById(id: number): Promise<schema.Transaction | undefined> {
+        try {
+            const db = await this.getDb();
+            const result = await db
+                .select()
+                .from(schema.transactions)
+                .where(eq(schema.transactions.id, +id));
+
+            return result[0];
+        } catch (error) {
+            console.error('Error retrieving transaction:', error);
+            throw error;
+        }
+    }
+
+    async getTransactionByNameAndAmount(name: string, amount: string): Promise<schema.Transaction | undefined> {
+        try {
+            const db = await this.getDb();
+            const [result] = await db
+                .select()
+                .from(schema.transactions)
+                .where(
+                    and(
+                        eq(schema.transactions.accountHolderName, name),
+                        eq(schema.transactions.amount, amount)
+                    )
+                )
+                .limit(1);
+
+            return result;
+        } catch (error) {
+            console.error('Error retrieving transaction:', error);
+            throw error;
+        }
+    }
+
+    async updateTransaction(payload: TransactionUpdateData): Promise<schema.Transaction | undefined> {
+        try {
+            const db = await this.getDb();
+
+            await db
+                .update(schema.transactions)
+                .set({ status: payload.status } as Partial<schema.Transaction>)
+                .where(eq(schema.transactions.id, payload.id));
+
+            console.log('Transaction updated:', payload.id);
+
+            return this.getTransactionById(payload.id);
+        } catch (error) {
+            console.error('Error updating transaction:', error);
+            throw error;
+        }
+    };
 
     // --- File_Summaries Methods ---
 
