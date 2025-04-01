@@ -6,21 +6,11 @@ import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
 
 export const recordRefund = async (payload: RefundRequest) => {
-    try {
-        const { ocrText, eid, txnDate, name, amount, refundUtr, fileUrl } = payload;
-
-        console.log('Recording refund:', { eid, ocrText, txnDate, name, amount, refundUtr, fileUrl });
-
-        await dbInstance.recordRefund(payload);
-
-    } catch (error) {
-        console.error('Error recording refund:', error);
-        throw error;
-    }
+    return await dbInstance.recordRefund(payload);
 };
 
 const isOcrValid = (ocrText: string, fields: RefundOCRFields) => {
-    return ocrText && fields && fields.eid && fields.txnDate && fields.name && fields.amount && fields.refundUtr;
+    return ocrText && fields && fields.txnDate && fields.name && fields.amount && fields.refundUtr;
 };
 
 // Background processing function
@@ -49,28 +39,27 @@ export async function processImageInBackground(chatId: number, fileId: string, c
 
         if (!isValid) {
             console.error('Invalid OCR data:', ocrData.data);
-            await ctx.api.editMessageText(chatId, messageId, 'Invalid OCR data\n```' + ocrText + '```', { parse_mode: 'MarkdownV2' });
+            await ctx.api.editMessageText(chatId, messageId, 'Invalid OCR data\n```' + ocrText + '\n Invalid data```', { parse_mode: 'MarkdownV2' });
 
             return;
         }
 
         // Step 4: Record in database
-        await recordRefund({ ocrText: ocrText, fileUrl, ...fields });
+        const refund = await recordRefund({ ocrText: ocrText, fileUrl, ...fields });
 
         const msgPayload = {
-            'Id': '`' + fields.eid + '`',
+            'Id': refund.id,
 
             'Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
             'Name': escapeTelegramEntities(fields.name),
-            'Refund Utr': '`' + fields.refundUtr + '`',
+            'Refund Utr': fields.refundUtr,
             'Transaction Date': escapeTelegramEntities(fields.txnDate),
         };
 
         const msg = Object.entries(msgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
 
-        const successMessage = 'Refund Recorded Successfully 🎉\n' +
-            'OCR text:\n```' + ocrText + '```\n' +
-            'Refund details:\n```' + msg + '```';
+        const successMessage = 'Refund Recorded Successfully 🎉\n\n' +
+            '```Refund_Details:\n' + msg + '```\n' + 'id\\: ```' + refund.id + '```\n' + '```' + refund.refundUtr + '```';
 
         // Step 5: Send success message
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });

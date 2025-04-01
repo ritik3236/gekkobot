@@ -4,6 +4,7 @@ import axios from 'axios';
 
 import { processImageInBackground } from '@/lib/db/refund';
 import { TelegramBot } from '@/lib/telegram/bot';
+import { formatNumber } from '@/lib/utils';
 
 // Bot 1 (e.g., your existing OCR bot)
 export const OCRBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN_OCR || '');
@@ -23,31 +24,32 @@ OCRBot.bot.command('ping', (ctx) => {
 });
 
 OCRBot.bot.command('refund', async (ctx) => {
-    const eid = ctx.message?.text?.split(' ')[1]; // Extract eid from command (e.g., "/refund 123")
+    const id = ctx.message?.text?.split(' ')[1]; // Extract id from command (e.g., "/refund 123")
 
-    if (!eid) {
-        await ctx.reply('Please provide a eid. Usage: /refund <eid>');
+    if (!id) {
+        await ctx.reply('Please provide a id. Usage: /refund <id>');
 
         return;
     }
 
     try {
-        const response = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${eid}`);
+        const response = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${id}`);
         const refund = response.data.data;
+        const msgPayload = {
+            'Id': refund.id,
 
-        const message = `
-Refund Details:
-- Unique ID: ${refund.eid}
-- Amount: ${refund.amount}
-- Name: ${refund.name}
-- Refund UTR: ${refund.refundUtr}
-- Transaction Date: ${refund.txnDate}
-        `.trim();
+            'Amount': formatNumber(refund.amount, { style: 'currency', currency: 'INR' }),
+            'Name': refund.name,
+            'Refund UTR': refund.refundUtr,
+            'Transaction Date': refund.txnDate,
+        };
+        const msg = Object.entries(msgPayload).map(([label, value]) => `${label}: ${value}`).join('\n');
+        const message = 'Found Record with id: ' + id + '\n```Refund_Details:\n' + msg + '```';
 
-        await ctx.reply(message);
+        await ctx.reply(message, { parse_mode: 'MarkdownV2' });
     } catch (error) {
         if (error.response?.status === 404) {
-            await ctx.reply(`Refund with eid ${eid} not found`);
+            await ctx.reply(`Refund with id ${id} not found`);
         } else {
             console.error('Error fetching refund:', error);
             await ctx.reply('Error fetching refund details');
