@@ -5,7 +5,7 @@ import axios from 'axios';
 import { processImageInBackground } from '@/lib/db/refund';
 import { Transaction } from '@/lib/db/schema';
 import { TelegramBot } from '@/lib/telegram/bot';
-import { refundAndTransactionMessageBuilder, refundMessageBuilder } from '@/lib/telegram/messageBulider';
+import { refundAndTransactionMessageBuilder, buildRefundMsg } from '@/lib/telegram/messageBulider';
 
 // Bot 1 (e.g., your existing OCR bot)
 export const OCRBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN_OCR || '');
@@ -46,7 +46,7 @@ OCRBot.bot.command('refund', async (ctx) => {
         const transactionResponse = await axios.get(`${process.env.VERCEL_BASE_URL}/api/transactions/${refund.transactionUuid}`);
         const transaction = transactionResponse.data.data as Transaction;
 
-        const message = 'Record Found\n' + refundMessageBuilder(refund);
+        const message = 'Record Found\n' + buildRefundMsg(refund);
 
         await ctx.reply(message, { parse_mode: 'MarkdownV2' });
     } catch (error) {
@@ -59,7 +59,7 @@ OCRBot.bot.command('refund', async (ctx) => {
     }
 });
 
-OCRBot.bot.command('status', async (ctx) => {
+OCRBot.bot.command('txn', async (ctx) => {
     const id = ctx.message?.text?.split(' ')[1]?.trim();
 
     if (!id) {
