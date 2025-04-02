@@ -139,10 +139,11 @@ export class Database {
         }
     }
 
-    async getTransactionByNameAndAmount(name: string, amount: string): Promise<schema.Transaction | undefined> {
+    async getTransactionByNameAndAmount(name: string, amount: string): Promise<schema.Transaction[] | undefined> {
         try {
             const db = await this.getDb();
-            const [result] = await db
+
+            return await db
                 .select()
                 .from(schema.transactions)
                 .where(
@@ -150,12 +151,9 @@ export class Database {
                         eq(schema.transactions.accountHolderName, name),
                         eq(schema.transactions.amount, amount)
                     )
-                )
-                .limit(1);
-
-            return result;
+                );
         } catch (error) {
-            console.error('Error retrieving transaction:', error);
+            console.error('Error retrieving transactions:', error);
             throw error;
         }
     }

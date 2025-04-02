@@ -1,6 +1,7 @@
 import axios from 'axios';
 
 import { dbInstance } from '@/lib/db/client';
+import { Transaction } from '@/lib/db/schema';
 import { OCRBot } from '@/lib/telegram/bot-instances';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
@@ -31,19 +32,12 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         messageId = processingMsg.message_id;
 
         // Step 2: Download image
-        console.time('Image download');
         const fileUrl = await OCRBot.getFileUrl(fileId);
 
-        console.timeEnd('Image download');
-        console.log('Image downloaded:', fileUrl);
-
         // Step 3: Process OCR
-        console.time('OCR processing');
         const { data: ocrData } = await axios.post(`${process.env.VERCEL_BASE_URL}/api/process-ocr`, {
             imagePath: fileUrl,
         });
-
-        console.timeEnd('OCR processing');
 
         const { ocrText, fields } = ocrData;
 
@@ -55,10 +49,7 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         }
 
         // Step 4: Record refund
-        console.time('Refund recording');
         const refund = await recordRefund({ ocrText, fileUrl, ...fields });
-
-        console.timeEnd('Refund recording');
 
         // Build and send success message
         const refundMsg = buildMessagePayload({
@@ -78,17 +69,31 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });
 
         // Step 5: Trigger refund update
-        console.time('Transaction update');
-        const { data: transactionResponse } = await axios.post(
-            `${process.env.VERCEL_BASE_URL}/api/transactions/refund-update`,
-            { refund_uuid: refund.uuid }
-        );
-
-        console.timeEnd('Transaction update');
-
+        const { data: transactionResponse } = await axios.post(`${process.env.VERCEL_BASE_URL}/api/transactions/refund-update`, { refund_uuid: refund.uuid });
         const { data: transaction, error: transactionError } = transactionResponse;
 
-        if (!transaction || transactionError) {
+        if (Array.isArray(transaction) && transaction.length > 1) {
+            const multipleTxnMsg = transaction
+                .map((txn: Transaction) => buildMessagePayload({
+                    'Id': txn.id,
+                    'S.No': txn.sNo,
+                    'File': txn.fileName,
+                    'Amount': formatNumber(txn.amount, {
+                        style: 'currency',
+                        currency: 'INR',
+                    }),
+                    'Account No': txn.accountNumber,
+                    'Name': txn.accountHolderName,
+                    'Status': txn.status,
+                }))
+                .join('\n\n');
+
+            await ctx.reply('Error\\: Multiple transactions found\\, please update manually\n\n' + '```Transactions_Details\n' + multipleTxnMsg + '```', { parse_mode: 'MarkdownV2' });
+
+            return;
+        }
+
+        if (transactionError) {
             console.error('Transaction update failed:', transactionError);
             await ctx.reply(`Error: ${transactionError}`);
 
@@ -117,7 +122,7 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         const errorMessage = error instanceof Error ? error.message : 'Error processing image';
 
         if (messageId) {
-            await ctx.api.editMessageText(chatId, messageId, `Processing failed: ${escapeTelegramEntities(errorMessage)}`, { parse_mode: 'MarkdownV2' });
+            await ctx.api.editMessageText(chatId, messageId, `Processing failed: ${escapeTelegramEntities(errorMessage)}`);
         } else {
             await ctx.reply(`Processing failed: ${errorMessage}`);
         }

@@ -1,6 +1,7 @@
 import { DateTime, Settings } from 'luxon';
 
 export const DATE_FORMAT = {
+    dmy: 'dd-MMM-yyyy',
     date: 'dd-LLL-y',
     fullDate: 'dd-LLL-y t',
     fullDateWithZone: 'dd-LLL-y HH:mm:ss (ZZZZ)',

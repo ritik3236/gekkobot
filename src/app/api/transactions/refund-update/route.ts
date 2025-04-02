@@ -16,13 +16,17 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         const { name, amount } = await dbInstance.getRefundByEid(refund_uuid);
 
-        const transaction = await dbInstance.getTransactionByNameAndAmount(name, amount);
+        const transactions = await dbInstance.getTransactionByNameAndAmount(name, amount);
 
-        if (!transaction) {
+        if (!transactions?.length) {
             return NextResponse.json({ error: 'Transaction not found' }, { status: 200 });
         }
 
-        const updatedTransaction = await dbInstance.updateTransaction({ id: transaction!.id, status: 'refunded' });
+        if (transactions.length > 1) {
+            return NextResponse.json({ error: 'Multiple transactions found', data: transactions }, { status: 200 });
+        }
+
+        const updatedTransaction = await dbInstance.updateTransaction({ id: transactions[0]!.id, status: 'refunded' });
 
         return NextResponse.json({ success: true, data: updatedTransaction });
     } catch (error) {
