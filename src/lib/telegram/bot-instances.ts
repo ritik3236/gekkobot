@@ -55,7 +55,7 @@ OCRBot.bot.command('txn', async (ctx) => {
     const id = ctx.message?.text?.split(' ')[1]?.trim();
 
     if (!id) {
-        await ctx.reply('Please provide an id. Usage: /status <id>');
+        await ctx.reply('Please provide an id. Usage: /txn <id>');
 
         return;
     }
