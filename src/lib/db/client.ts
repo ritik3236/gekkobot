@@ -25,6 +25,7 @@ interface RefundData {
 interface TransactionUpdateData {
     id: number;
     status: string;
+    bankRefundUuid: string;
 }
 
 export class Database {
@@ -165,7 +166,7 @@ export class Database {
 
             await db
                 .update(schema.transactions)
-                .set({ status: payload.status } as Partial<schema.Transaction>)
+                .set({ status: payload.status, ...(payload.bankRefundUuid && { bankRefundUuid: payload.bankRefundUuid }) } as Partial<schema.Transaction>)
                 .where(eq(schema.transactions.id, payload.id));
 
             console.log('Transaction updated:', payload.id);

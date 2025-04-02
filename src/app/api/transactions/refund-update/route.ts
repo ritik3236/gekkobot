@@ -14,7 +14,7 @@ export async function POST(req: Request): Promise<NextResponse> {
             return NextResponse.json({ error: 'Invalid refund_uuid id' }, { status: 200 });
         }
 
-        const { name, amount } = await dbInstance.getRefundByEid(refund_uuid);
+        const { name, amount, uuid } = await dbInstance.getRefundByEid(refund_uuid);
 
         const transactions = await dbInstance.getTransactionByNameAndAmount(name, amount);
 
@@ -26,7 +26,11 @@ export async function POST(req: Request): Promise<NextResponse> {
             return NextResponse.json({ error: 'Multiple transactions found', data: transactions }, { status: 200 });
         }
 
-        const updatedTransaction = await dbInstance.updateTransaction({ id: transactions[0]!.id, status: 'refunded' });
+        const updatedTransaction = await dbInstance.updateTransaction({
+            id: transactions[0]!.id,
+            status: 'refunded',
+            bankRefundUuid: uuid,
+        });
 
         return NextResponse.json({ success: true, data: updatedTransaction });
     } catch (error) {
