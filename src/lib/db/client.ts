@@ -66,7 +66,7 @@ export class Database {
         const existingRefund = await this.getRefundByEid(payload.uuid);
 
         if (existingRefund) {
-            throw new Error(`Refund with UTR ${payload.uuid} already exists`);
+            throw new Error(`Duplicate entry: Refund with UTR ${payload.uuid} already exists`);
         }
 
         try {

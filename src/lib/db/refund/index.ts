@@ -3,12 +3,23 @@ import axios from 'axios';
 import { dbInstance } from '@/lib/db/client';
 import { Transaction } from '@/lib/db/schema';
 import { OCRBot } from '@/lib/telegram/bot-instances';
-import { buildMessagePayload } from '@/lib/telegram/messageBulider';
+import { buildMessagePayload, refundMessageBuilder, transactionMessageBuilder } from '@/lib/telegram/messageBulider';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
 
-export const recordRefund = async (payload: RefundRequest) => {
-    return await dbInstance.recordRefund(payload);
+const recordRefund = async (payload: RefundRequest) => {
+    try {
+        const recordedRefund = await dbInstance.recordRefund(payload);
+
+        return { data: recordedRefund, error: null };
+
+    } catch (error) {
+        if (error.message.includes('Duplicate entry')) {
+            const refund = await dbInstance.getRefundByEid(payload.uuid);
+
+            return { data: refund, error: 'Duplicate entry' };
+        }
+    }
 };
 
 const isOcrValid = (ocrText: string, fields: RefundOCRFields): boolean => {
@@ -44,27 +55,15 @@ export async function processImageInBackground(chatId: number, fileId: string, c
         }
 
         // Step 4: Record refund
-        const refund = await recordRefund({ ocrText, fileUrl, ...fields });
+        const { data, error } = await recordRefund({ ocrText, fileUrl, ...fields });
 
-        // Build and send success message
-        const refundMsg = buildMessagePayload({
-            'Id': refund.id,
-
-            'Amount': escapeTelegramEntities(formatNumber(fields.amount, { style: 'currency', currency: 'INR' })),
-            'Name': escapeTelegramEntities(fields.name),
-            'Refund UTR': fields.refundUtr,
-            'Transaction Date': escapeTelegramEntities(fields.txnDate),
-        });
-
-        const successMessage = 'Refund Recorded Successfully 🎉\n\n' +
-            '```Refund_Details:\n' + refundMsg + '```\n' +
-            '```' + refund.id + '```\n' +
-            '```' + refund.refundUtr + '```';
+        const refundMsg = refundMessageBuilder(data);
+        const successMessage = error ? 'Refund already exists\n\n' + refundMsg : 'Refund Recorded Successfully 🎉\n\n' + refundMsg;
 
         await ctx.api.editMessageText(chatId, messageId, successMessage, { parse_mode: 'MarkdownV2' });
 
         // Step 5: Trigger refund update
-        const { data: transactionResponse } = await axios.post(`${process.env.VERCEL_BASE_URL}/api/transactions/refund-update`, { refund_uuid: refund.uuid });
+        const { data: transactionResponse } = await axios.post(`${process.env.VERCEL_BASE_URL}/api/transactions/refund-update`, { refund_uuid: data.uuid });
         const { data: transaction, error: transactionError } = transactionResponse;
 
         if (Array.isArray(transaction) && transaction.length > 1) {
@@ -95,31 +94,16 @@ export async function processImageInBackground(chatId: number, fileId: string, c
             return;
         }
 
-        // Build and send transaction message
-        const transactionMsg = buildMessagePayload({
-            'Id': transaction.id,
-            'S.No': transaction.sNo,
-            'File': transaction.fileName,
-            'Amount': escapeTelegramEntities(formatNumber(transaction.amount, { style: 'currency', currency: 'INR' })),
-            'Account No': transaction.accountNumber,
-            'Name': escapeTelegramEntities(transaction.accountHolderName),
-            'Status': escapeTelegramEntities(transaction.status),
-        });
+        const txnMsg = transactionMessageBuilder(transaction);
 
-        const transactionSuccessMessage = 'Transaction Updated Successfully 🎉\n\n' +
-            '```Transaction_Details:\n' + transactionMsg + '```\n' +
-            '```' + transaction.id + '```';
-
-        await ctx.api.editMessageText(chatId, messageId, `${successMessage}\n ============== \n${transactionSuccessMessage}`, { parse_mode: 'MarkdownV2' });
+        await ctx.api.editMessageText(chatId, messageId,
+            `${successMessage}\n` + escapeTelegramEntities('\n==============\n') + `\n${txnMsg}`,
+            { parse_mode: 'MarkdownV2' });
 
     } catch (error) {
         console.error('Error in background processing:', error);
         const errorMessage = error instanceof Error ? error.message : 'Error processing image';
 
-        if (messageId) {
-            await ctx.api.editMessageText(chatId, messageId, `Processing failed: ${escapeTelegramEntities(errorMessage)}`);
-        } else {
-            await ctx.reply(`Processing failed: ${errorMessage}`);
-        }
+        await ctx.reply(`Processing failed: ${errorMessage}`);
     }
 }
