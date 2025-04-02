@@ -20,6 +20,10 @@ export const getTimezone = () => {
 export const localeDate = (date: string | number | any, format: keyof typeof DATE_FORMAT = 'fullDate', zone: string = getTimezone()) => {
     let dateTime: DateTime;
 
+    if (!date) {
+        return '';
+    }
+
     if (typeof date === 'number' || !isNaN(+date)) {
         dateTime = luxon.fromMillis(date.toString().length === 10 ? date * 1000 : date, { zone });
     } else if (date instanceof Date) {

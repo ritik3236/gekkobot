@@ -28,6 +28,11 @@ interface TransactionUpdateData {
     bankRefundUuid: string;
 }
 
+interface RefundUpdatePayload extends Partial<schema.Transaction> {
+    id: number;
+    transactionUuid: string;
+}
+
 export class Database {
     private readonly dbConfig: DbConfig;
     private connection: Connection | null = null;
@@ -64,19 +69,13 @@ export class Database {
     // --- Bank_Refunds Methods ---
 
     async recordRefund(payload: RefundData): Promise<schema.BankRefund> {
-        const existingRefund = await this.getRefundByEid(payload.uuid);
-
-        if (existingRefund) {
-            throw new Error(`Duplicate entry: Refund with UTR ${payload.uuid} already exists`);
-        }
-
         try {
             const db = await this.getDb();
             const [res] = await db.insert(schema.bankRefunds).values(payload);
 
             console.log('Refund recorded:', { id: res.insertId });
 
-            return { id: res.insertId, transactionUuid: '', ...payload, createdAt: new Date() };
+            return await this.getRefundById(res.insertId);
         } catch (error) {
             console.error('Error recording refund:', error);
             throw error;
@@ -109,6 +108,26 @@ export class Database {
             return result[0];
         } catch (error) {
             console.error('Error retrieving refund:', error);
+            throw error;
+        }
+    }
+
+    async updateRefund(payload: RefundUpdatePayload): Promise<schema.BankRefund | undefined> {
+        try {
+            const db = await this.getDb();
+
+            await db
+                .update(schema.bankRefunds)
+                .set({
+                    transactionUuid: payload.transactionUuid,
+                    fileName: payload.fileName,
+                    sNo: payload.sNo,
+                } as Partial<schema.BankRefund>)
+                .where(eq(schema.bankRefunds.id, payload.id));
+
+            return await this.getRefundById(payload.id);
+        } catch (error) {
+            console.error('Error updating refund:', error);
             throw error;
         }
     }
@@ -168,8 +187,6 @@ export class Database {
                 .update(schema.transactions)
                 .set({ status: payload.status, ...(payload.bankRefundUuid && { bankRefundUuid: payload.bankRefundUuid }) } as Partial<schema.Transaction>)
                 .where(eq(schema.transactions.id, payload.id));
-
-            console.log('Transaction updated:', payload.id);
 
             return this.getTransactionById(payload.id);
         } catch (error) {
