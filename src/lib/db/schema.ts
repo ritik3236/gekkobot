@@ -9,8 +9,9 @@ export const bankRefunds = mysqlTable('bank_refunds', {
     name: varchar('account_holder_name', { length: 255 }),
     ocrText: text('ocr_text').notNull(),
     refundUtr: varchar('utr', { length: 255 }),
+    transactionUuid: varchar('transaction_uuid', { length: 64 }),
     txnDate: varchar('txn_date', { length: 50 }),
-    uuid: varchar('uuid', { length: 255 }).notNull().unique(),
+    uuid: varchar('uuid', { length: 64 }).notNull().unique(),
 });
 
 export type BankRefund = typeof bankRefunds.$inferSelect;
@@ -21,6 +22,7 @@ export const transactions = mysqlTable('transactions', {
     accountHolderName: varchar('account_holder_name', { length: 64 }),
     accountNumber: varchar('account_number', { length: 32 }),
     amount: decimal('amount', { precision: 15, scale: 2 }),
+    bankRefundUuid: varchar('bank_refund_uuid', { length: 64 }),
     createdAt: timestamp('created_at').defaultNow(),
     fileName: varchar('file_name', { length: 255 }),
     ifscCode: varchar('ifsc_code', { length: 16 }),

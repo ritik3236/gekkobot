@@ -3,6 +3,7 @@ import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
 import * as schema from '@/lib/db/schema';
+import { isNumeric } from '@/lib/numberHelper';
 
 interface DbConfig {
     host: string;
@@ -74,7 +75,7 @@ export class Database {
 
             console.log('Refund recorded:', { id: res.insertId });
 
-            return { id: res.insertId, ...payload, createdAt: new Date() };
+            return { id: res.insertId, transactionUuid: '', ...payload, createdAt: new Date() };
         } catch (error) {
             console.error('Error recording refund:', error);
             throw error;
@@ -96,13 +97,13 @@ export class Database {
         }
     }
 
-    async getRefundById(id: number): Promise<schema.BankRefund | undefined> {
+    async getRefundById(id: number | string): Promise<schema.BankRefund | undefined> {
         try {
             const db = await this.getDb();
             const result = await db
                 .select()
                 .from(schema.bankRefunds)
-                .where(eq(schema.bankRefunds.id, +id));
+                .where(eq(isNumeric(id) ? schema.bankRefunds.id : schema.bankRefunds.uuid, id));
 
             return result[0];
         } catch (error) {
@@ -124,13 +125,13 @@ export class Database {
 
     // --- Transactions Methods ---
 
-    async getTransactionById(id: number): Promise<schema.Transaction | undefined> {
+    async getTransactionById(id: number | string): Promise<schema.Transaction | undefined> {
         try {
             const db = await this.getDb();
             const result = await db
                 .select()
                 .from(schema.transactions)
-                .where(eq(schema.transactions.id, +id));
+                .where(eq(isNumeric(id) ? schema.transactions.id : schema.transactions.uuid, id));
 
             return result[0];
         } catch (error) {

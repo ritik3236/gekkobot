@@ -3,6 +3,7 @@ import axios from 'axios';
 import { dbInstance } from '@/lib/db/client';
 import { Transaction } from '@/lib/db/schema';
 import { OCRBot } from '@/lib/telegram/bot-instances';
+import { buildMessagePayload } from '@/lib/telegram/messageBulider';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
 
@@ -12,12 +13,6 @@ export const recordRefund = async (payload: RefundRequest) => {
 
 const isOcrValid = (ocrText: string, fields: RefundOCRFields): boolean => {
     return !!(ocrText && fields?.txnDate && fields?.name && fields?.amount && fields?.refundUtr);
-};
-
-const buildMessagePayload = (data: Record<string, unknown>) => {
-    return Object.entries(data)
-        .map(([label, value]) => `${label}: ${value}`)
-        .join('\n');
 };
 
 export async function processImageInBackground(chatId: number, fileId: string, ctx: any) {
