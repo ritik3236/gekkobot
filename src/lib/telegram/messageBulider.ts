@@ -54,7 +54,7 @@ export const buildTransactionMsg = (transaction: Transaction) => {
         '```Transaction_Details:\n' + txnMsg + '```';
 };
 
-export const refundAndTransactionMessageBuilder = (refund: BankRefund, transaction: Transaction) => {
+export const buildRefundAndTransactionMsg = (refund: BankRefund, transaction: Transaction) => {
     return buildRefundMsg(refund)
         + '\n' + escapeTelegramEntities('=======================')
         + '\n' + buildTransactionMsg(transaction);

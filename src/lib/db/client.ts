@@ -1,9 +1,8 @@
-import { and, eq } from 'drizzle-orm';
+import { and, eq, or } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
 import * as schema from '@/lib/db/schema';
-import { isNumeric } from '@/lib/numberHelper';
 
 interface DbConfig {
     host: string;
@@ -103,7 +102,10 @@ export class Database {
             const result = await db
                 .select()
                 .from(schema.bankRefunds)
-                .where(eq(isNumeric(id) ? schema.bankRefunds.id : schema.bankRefunds.uuid, id));
+                .where(or(
+                    eq(schema.bankRefunds.id, id as number),
+                    eq(schema.bankRefunds.uuid, id as string)
+                ));
 
             return result[0];
         } catch (error) {
@@ -151,7 +153,10 @@ export class Database {
             const result = await db
                 .select()
                 .from(schema.transactions)
-                .where(eq(isNumeric(id) ? schema.transactions.id : schema.transactions.uuid, id));
+                .where(or(
+                    eq(schema.transactions.id, id as number),
+                    eq(schema.transactions.uuid, id as string)
+                ));
 
             return result[0];
         } catch (error) {

@@ -1,5 +1,7 @@
 import { DateTime, Settings } from 'luxon';
 
+import { isNumeric } from '@/lib/numberHelper';
+
 export const DATE_FORMAT = {
     dmy: 'dd-MMM-yyyy',
     date: 'dd-LLL-y',
@@ -24,11 +26,15 @@ export const localeDate = (date: string | number | any, format: keyof typeof DAT
         return '';
     }
 
-    if (typeof date === 'number' || !isNaN(+date)) {
+    if (isNumeric(date)) {
         dateTime = luxon.fromMillis(date.toString().length === 10 ? date * 1000 : date, { zone });
-    } else if (date instanceof Date) {
+    }
+
+    if (date instanceof Date) {
         dateTime = luxon.fromJSDate(date, { zone });
-    } else {
+    }
+
+    else {
         dateTime = luxon.fromISO(date, { zone });
     }
 

@@ -1,3 +1,4 @@
+import { luxon } from '@/lib/localeDate';
 import { RefundOCRFields } from '@/lib/types';
 
 export const extractOcrFields = (text: string): RefundOCRFields => {
@@ -20,9 +21,13 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
 
     console.log('======', text, escapeText, '\n=====');
 
+    const txnDate = escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', '')?.match(/(\d{2})-([A-Za-z]{3})-\s*(\d{4})/i)?.[0]?.trim();
+
+    const formatedDate = txnDate && luxon.fromFormat(txnDate, 'dd-MMM-yyyy', { zone: 'utc' }).toFormat('yyyy-MM-dd HH:mm:ss');
+
     return {
         amount: escapeText.match(/(?<=of\s(?:INR?|IN)\s)[\d.,\s]+\.\d{2}(?=\shas)/i)?.[0]?.trim()?.replace(/\.(?=.*\.)/g, ''),
-        txnDate: escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', '')?.match(/(\d{2})-([A-Za-z]{3})-\s*(\d{4})/i)?.[0]?.trim(),
+        txnDate: formatedDate || '',
         name: escapeText.match(/YES\w+-\s*([^-]+)/i)?.[1]?.trim()?.toUpperCase(),
         refundUtr: escapeText.match(/YES\w+/)?.[0],
         uuid: escapeText.match(/YES\w+/)?.[0],

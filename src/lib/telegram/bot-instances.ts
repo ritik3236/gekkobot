@@ -1,11 +1,9 @@
 import * as process from 'node:process';
 
-import axios from 'axios';
-
+import { dbInstance } from '@/lib/db/client';
 import { processImageInBackground } from '@/lib/db/refund';
-import { Transaction } from '@/lib/db/schema';
 import { TelegramBot } from '@/lib/telegram/bot';
-import { refundAndTransactionMessageBuilder, buildRefundMsg } from '@/lib/telegram/messageBulider';
+import { buildRefundAndTransactionMsg } from '@/lib/telegram/messageBulider';
 
 // Bot 1 (e.g., your existing OCR bot)
 export const OCRBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN_OCR || '');
@@ -34,8 +32,7 @@ OCRBot.bot.command('refund', async (ctx) => {
     }
 
     try {
-        const refundResponse = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${id}`);
-        const refund = refundResponse.data.data;
+        const refund = await dbInstance.getRefundById(id);
 
         if (!refund?.id) {
             await ctx.reply(`Refund with id ${id} not found`);
@@ -43,19 +40,14 @@ OCRBot.bot.command('refund', async (ctx) => {
             return;
         }
 
-        const transactionResponse = await axios.get(`${process.env.VERCEL_BASE_URL}/api/transactions/${refund.transactionUuid}`);
-        const transaction = transactionResponse.data.data as Transaction;
+        const transaction = await dbInstance.getTransactionById(refund.transactionUuid);
 
-        const message = 'Record Found\n' + buildRefundMsg(refund);
+        const message = 'Record Found\n' + buildRefundAndTransactionMsg(refund, transaction);
 
         await ctx.reply(message, { parse_mode: 'MarkdownV2' });
     } catch (error) {
-        if (error.response?.status === 404) {
-            await ctx.reply(`Refund with id ${id} not found`);
-        } else {
-            console.error('Error fetching refund:', error);
-            await ctx.reply('Error fetching refund details');
-        }
+        console.error('Error fetching refund:', error);
+        await ctx.reply('Error fetching refund details');
     }
 });
 
@@ -69,8 +61,7 @@ OCRBot.bot.command('txn', async (ctx) => {
     }
 
     try {
-        const transactionResponse = await axios.get(`${process.env.VERCEL_BASE_URL}/api/transactions/${id}`);
-        const transaction = transactionResponse.data.data as Transaction;
+        const transaction = await dbInstance.getTransactionById(id);
 
         if (!transaction?.id) {
             await ctx.reply(`Transaction with id ${id} not found`);
@@ -78,19 +69,14 @@ OCRBot.bot.command('txn', async (ctx) => {
             return;
         }
 
-        const refundResponse = await axios.get(`${process.env.VERCEL_BASE_URL}/api/refunds/${transaction.bankRefundUuid}`);
-        const refund = refundResponse.data.data;
+        const refund = await dbInstance.getRefundById(transaction.bankRefundUuid);
 
-        const message = 'Record Found\n' + refundAndTransactionMessageBuilder(refund, transaction);
+        const message = 'Record Found\n' + buildRefundAndTransactionMsg(refund, transaction);
 
         await ctx.reply(message, { parse_mode: 'MarkdownV2' });
     } catch (error) {
-        if (error.response?.status === 404) {
-            await ctx.reply(`Transaction with id ${id} not found`);
-        } else {
-            console.error('Error fetching transaction:', error);
-            await ctx.reply('Error fetching transaction details');
-        }
+        console.error('Error fetching transaction:', error);
+        await ctx.reply('Error fetching transaction details');
     }
 });
 
