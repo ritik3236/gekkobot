@@ -1,4 +1,4 @@
-import { and, eq, or } from 'drizzle-orm';
+import { and, eq, or, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
@@ -68,6 +68,9 @@ export class Database {
     // --- Bank_Refunds Methods ---
 
     async recordRefund(payload: RefundData): Promise<schema.BankRefund> {
+
+        console.log('Recording refund:', payload);
+
         try {
             const db = await this.getDb();
             const [res] = await db.insert(schema.bankRefunds).values(payload);
@@ -77,21 +80,6 @@ export class Database {
             return await this.getRefundById(res.insertId);
         } catch (error) {
             console.error('Error recording refund:', error);
-            throw error;
-        }
-    }
-
-    async getRefundByEid(uuid: string): Promise<schema.BankRefund | undefined> {
-        try {
-            const db = await this.getDb();
-            const result = await db
-                .select()
-                .from(schema.bankRefunds)
-                .where(eq(schema.bankRefunds.uuid, uuid));
-
-            return result[0];
-        } catch (error) {
-            console.error('Error retrieving refund:', error);
             throw error;
         }
     }
@@ -174,7 +162,7 @@ export class Database {
                 .from(schema.transactions)
                 .where(
                     and(
-                        eq(schema.transactions.accountHolderName, name),
+                        sql`UPPER(${schema.transactions.accountHolderName}) = ${name}`,
                         eq(schema.transactions.amount, amount)
                     )
                 );

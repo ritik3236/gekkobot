@@ -103,6 +103,7 @@ export async function processImageInBackground(chatId: number, fileId: string, c
             return;
         }
 
+        fields.txnDate = new Date(fields.txnDate);
         // Step 4: Record refund
         const { record: refund, message: refundMsg } = await recordRefund({ ocrText, fileUrl, ...fields });
 
