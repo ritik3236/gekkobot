@@ -23,7 +23,7 @@ OCRBot.bot.command('ping', (ctx) => {
 });
 
 OCRBot.bot.command('refund', async (ctx) => {
-    const id = ctx.message?.text?.split(' ')[1].trim();
+    const id = ctx.message?.text?.split(' ')[1]?.trim();
 
     if (!id) {
         await ctx.reply('Please provide an id. Usage: /refund <id>');
