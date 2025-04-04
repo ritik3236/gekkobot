@@ -1,8 +1,10 @@
-import { and, eq, or, sql } from 'drizzle-orm';
+import { and, eq, or, SQL, sql } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
 import * as schema from '@/lib/db/schema';
+import { luxon } from '@/lib/localeDate';
+import { isNumeric } from '@/lib/numberHelper';
 
 interface DbConfig {
     host: string;
@@ -87,13 +89,14 @@ export class Database {
     async getRefundById(id: number | string): Promise<schema.BankRefund | undefined> {
         try {
             const db = await this.getDb();
-            const result = await db
+            const query = db
                 .select()
                 .from(schema.bankRefunds)
-                .where(or(
-                    eq(schema.bankRefunds.id, id as number),
-                    eq(schema.bankRefunds.uuid, id as string)
-                ));
+                .where(eq(isNumeric(id) ? schema.bankRefunds.id : schema.bankRefunds.uuid, id));
+
+            console.log('Generated SQL - [getRefundById]: ', query.toSQL());
+
+            const result = await query;
 
             return result[0];
         } catch (error) {
@@ -103,34 +106,29 @@ export class Database {
     }
 
     async updateRefund(payload: RefundUpdatePayload): Promise<schema.BankRefund | undefined> {
-        try {
-            const db = await this.getDb();
+        const db = await this.getDb();
 
-            await db
-                .update(schema.bankRefunds)
-                .set({
-                    transactionUuid: payload.transactionUuid,
-                    fileName: payload.fileName,
-                    sNo: payload.sNo,
-                } as Partial<schema.BankRefund>)
-                .where(eq(schema.bankRefunds.id, payload.id));
+        return await db.transaction(async (tx) => {
+            try {
+                const query = tx
+                    .update(schema.bankRefunds)
+                    .set({
+                        transactionUuid: payload.transactionUuid,
+                        fileName: payload.fileName,
+                        sNo: payload.sNo,
+                    } as Partial<schema.BankRefund>)
+                    .where(eq(schema.bankRefunds.id, payload.id));
 
-            return await this.getRefundById(payload.id);
-        } catch (error) {
-            console.error('Error updating refund:', error);
-            throw error;
-        }
-    }
+                console.log('Generated SQL - [updateRefund]: ', query.toSQL());
 
-    async getAllRefunds(): Promise<schema.BankRefund[]> {
-        try {
-            const db = await this.getDb();
+                await query;
 
-            return await db.select().from(schema.bankRefunds);
-        } catch (error) {
-            console.error('Error retrieving all refunds:', error);
-            throw error;
-        }
+                return await this.getRefundById(payload.id);
+            } catch (error) {
+                console.error('Error updating refund:', error);
+                throw error;
+            }
+        });
     }
 
     // --- Transactions Methods ---
@@ -138,13 +136,14 @@ export class Database {
     async getTransactionById(id: number | string): Promise<schema.Transaction | undefined> {
         try {
             const db = await this.getDb();
-            const result = await db
+            const query = db
                 .select()
                 .from(schema.transactions)
-                .where(or(
-                    eq(schema.transactions.id, id as number),
-                    eq(schema.transactions.uuid, id as string)
-                ));
+                .where(eq(isNumeric(id) ? schema.transactions.id : schema.transactions.uuid, id));
+
+            console.log('Generated SQL - [getTransactionById]: ', query.toSQL());
+
+            const result = await query;
 
             return result[0];
         } catch (error) {
@@ -153,19 +152,25 @@ export class Database {
         }
     }
 
-    async getTransactionByNameAndAmount(name: string, amount: string): Promise<schema.Transaction[] | undefined> {
+    async getTransactionByNameAndAmount(name: string, amount: string, date: Date): Promise<schema.Transaction[] | undefined> {
         try {
+            const conditions = prepareTransactionQuery(name, amount, date);
             const db = await this.getDb();
 
-            return await db
+            const query = db
                 .select()
                 .from(schema.transactions)
                 .where(
                     and(
-                        sql`UPPER(${schema.transactions.accountHolderName}) = ${name}`,
-                        eq(schema.transactions.amount, amount)
+                        conditions.nameCondition,
+                        conditions.amountCondition,
+                        conditions.dateCondition
                     )
                 );
+
+            console.log('Generated SQL - [getTransactionByNameAmountAndDate]: ', query.toSQL());
+
+            return await query;
         } catch (error) {
             console.error('Error retrieving transactions:', error);
             throw error;
@@ -173,19 +178,29 @@ export class Database {
     }
 
     async updateTransaction(payload: TransactionUpdateData): Promise<schema.Transaction | undefined> {
-        try {
-            const db = await this.getDb();
+        const db = await this.getDb();
 
-            await db
-                .update(schema.transactions)
-                .set({ status: payload.status, ...(payload.bankRefundUuid && { bankRefundUuid: payload.bankRefundUuid }) } as Partial<schema.Transaction>)
-                .where(eq(schema.transactions.id, payload.id));
+        return await db.transaction(async (tx) => {
+            try {
+                const query = tx
+                    .update(schema.transactions)
+                    .set({
+                        status: payload.status,
+                        bankRefundUuid: payload.bankRefundUuid,
+                        updatedAt: new Date(),
+                    } as Partial<schema.Transaction>)
+                    .where(eq(schema.transactions.id, payload.id));
 
-            return this.getTransactionById(payload.id);
-        } catch (error) {
-            console.error('Error updating transaction:', error);
-            throw error;
-        }
+                console.log('Generated SQL - [updateTransaction]: ', query.toSQL());
+
+                await query;
+
+                return await this.getTransactionById(payload.id);
+            } catch (error) {
+                console.error('Transaction failed, rolling back:', error);
+                throw error;
+            }
+        });
     };
 
     // --- File_Summaries Methods ---
@@ -198,6 +213,45 @@ export class Database {
             console.log('Database connection closed');
         }
     }
+}
+
+// Helpers
+
+function prepareTransactionQuery(
+    name: string,
+    amount: string,
+    txnDate: Date
+): {
+        nameCondition: SQL<unknown>;
+        amountCondition: SQL<unknown>;
+        dateCondition: SQL<unknown>;
+    } {
+    if (!name?.trim() || !amount || !txnDate) {
+        throw new Error('Name, Amount, and Date are required');
+    }
+
+    const date = luxon.fromJSDate(txnDate);
+
+    const previousDate = date.minus({ days: 1 });
+    const datesToCheck = [date, previousDate];
+    const patterns = datesToCheck.flatMap((dt) => {
+        const day = dt.day;
+        const month = dt.toFormat('MMM').toUpperCase();
+
+        return [
+            `${day}${month}`,
+            `${String(day).padStart(2, '0')}${month}`,
+        ];
+    });
+    const uniquePatterns = [...new Set(patterns)];
+
+    const nameCondition = sql`UPPER(${schema.transactions.accountHolderName}) = ${name.toUpperCase()}`;
+    const amountCondition = eq(schema.transactions.amount, amount);
+    const dateCondition = or(
+        ...uniquePatterns.map((pattern) => sql`${schema.transactions.fileName} LIKE ${`%${pattern}%`}`)
+    );
+
+    return { nameCondition, amountCondition, dateCondition };
 }
 
 export const dbInstance = new Database();

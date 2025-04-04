@@ -21,7 +21,7 @@ export const extractOcrFields = (text: string): RefundOCRFields => {
 
     console.log('======', text, escapeText, '\n=====');
 
-    const txnDate = escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.trim().replaceAll('|', '')?.match(/(\d{2})-([A-Za-z]{3})-\s*(\d{4})/i)?.[0]?.trim();
+    const txnDate = escapeText.match(/(?<=on\s).*?(?=\son)/i)?.[0]?.replaceAll(' ', '')?.replaceAll('|', '')?.match(/(\d{2})-([A-Za-z]{3})-\s*(\d{4})/i)?.[0]?.trim();
 
     const formatedDate = txnDate && luxon.fromFormat(txnDate, 'dd-MMM-yyyy', { zone: 'utc' }).toFormat('yyyy-MM-dd HH:mm:ss');
 
