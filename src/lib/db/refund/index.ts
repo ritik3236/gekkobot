@@ -34,7 +34,7 @@ const updateTransaction = async (refund: BankRefund) => {
 
         return { records: [transaction], updated: false, message: RECORD_UPDATED_ALREADY };
     }
-    const transactions = await dbInstance.getTransactionByNameAndAmount(refund.name, refund.amount, refund.txnDate);
+    const transactions = await dbInstance.getTransactionByNameAmountDate(refund.name, refund.amount, refund.txnDate);
 
     if (!transactions?.length) {
         return { records: null, updated: false, message: RECORD_NOT_FOUND };

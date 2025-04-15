@@ -70,7 +70,6 @@ export class Database {
     // --- Bank_Refunds Methods ---
 
     async recordRefund(payload: RefundData): Promise<schema.BankRefund> {
-
         console.log('Recording refund:', payload);
 
         try {
@@ -152,7 +151,7 @@ export class Database {
         }
     }
 
-    async getTransactionByNameAndAmount(name: string, amount: string, date: Date): Promise<schema.Transaction[] | undefined> {
+    async getTransactionByNameAmountDate(name: string, amount: string, date: Date): Promise<schema.Transaction[] | undefined> {
         try {
             const conditions = prepareTransactionQuery(name, amount, date);
             const db = await this.getDb();
@@ -168,7 +167,7 @@ export class Database {
                     )
                 );
 
-            console.log('Generated SQL - [getTransactionByNameAmountAndDate]: ', query.toSQL());
+            console.log('Generated SQL - [getTransactionByNameAmountDate]: ', query.toSQL());
 
             return await query;
         } catch (error) {

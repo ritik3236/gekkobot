@@ -1,0 +1,44 @@
+import axios from 'axios';
+import { InputFile } from 'grammy';
+import { NextResponse } from 'next/server';
+
+import { OCRBot } from '@/lib/telegram/bot-instances';
+
+const CHAT_ID = '1282110140';
+
+export async function POST(req: Request): Promise<NextResponse> {
+    try {
+        // Parse the incoming JSON containing a filePath URL
+        const { filePath }: { filePath: string } = await req.json();
+
+        // Validate that the filePath is an absolute URL
+        if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
+            throw new Error(`Invalid URL provided: ${filePath}`);
+        }
+
+        // Fetch the file as binary data (arraybuffer) instead of stream
+        const response = await axios.get(filePath, { responseType: 'arraybuffer' });
+
+        // Convert the response to a Node.js Buffer
+        const buffer = Buffer.from(response.data);
+
+        // Optionally, extract the file name from the URL or set a default
+        const filename = filePath.split('/').pop() || 'document.xlsx';
+
+        // Create an InputFile from the buffer, ensuring Telegram sees it as a file
+        const inputFile = new InputFile(buffer, filename);
+
+        // Send the document to Telegram
+        await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
+
+        return NextResponse.json({ success: true });
+
+    } catch (error) {
+        console.error('Failed to send document to Telegram:', error);
+
+        return NextResponse.json({
+            error: 'OCR processing failed',
+            details: error instanceof Error ? error.message : String(error),
+        }, { status: 500 });
+    }
+}
