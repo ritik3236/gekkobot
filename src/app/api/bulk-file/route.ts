@@ -23,8 +23,6 @@ export async function POST(req: Request): Promise<Response> {
     try {
         // Parse the incoming JSON containing a file_url URL
         const { file_url, data }: BulkPayoutResponse = await req.json();
-        
-        console.log(file_url, data);
 
         // Validate that the file_url is an absolute URL
         if (!file_url.startsWith('http://') && !file_url.startsWith('https://')) {
@@ -38,7 +36,7 @@ export async function POST(req: Request): Promise<Response> {
         const buffer = Buffer.from(response.data);
 
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
-        const inputFile = new InputFile(buffer, data.id);
+        const inputFile = new InputFile(buffer, data.id + '.xlsx');
 
         // Send the document to Telegram
         await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
