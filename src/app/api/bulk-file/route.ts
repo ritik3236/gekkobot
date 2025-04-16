@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { OCRBot } from '@/lib/telegram/bot-instances';
 
 const CHAT_ID = '-4770924782';
+const TestChatId = '1282110140';
 
 export async function POST(req: Request): Promise<NextResponse> {
     try {
@@ -29,7 +30,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         const inputFile = new InputFile(buffer, filename);
 
         // Send the document to Telegram
-        await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
+        await OCRBot.bot.api.sendDocument(TestChatId, inputFile);
 
         return NextResponse.json({ success: true });
 
