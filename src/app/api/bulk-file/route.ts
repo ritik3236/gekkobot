@@ -2,6 +2,7 @@ import axios from 'axios';
 import { InputFile } from 'grammy';
 import { NextResponse } from 'next/server';
 
+import { setCorsHeaders } from '@/lib/middleware';
 import { OCRBot } from '@/lib/telegram/bot-instances';
 import { buildBulkPayoutPreProccessMsg } from '@/lib/telegram/messageBulider';
 import { BulkPayoutInterface } from '@/lib/types';
@@ -12,6 +13,10 @@ const TestChatId = '1282110140';
 interface BulkPayoutResponse {
     data: BulkPayoutInterface;
     file_url: string
+}
+
+export async function OPTIONS(): Promise<Response> {
+    return setCorsHeaders(new NextResponse(null, { status: 204 }));
 }
 
 export async function POST(req: Request): Promise<NextResponse> {
