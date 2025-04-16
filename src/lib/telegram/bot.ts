@@ -21,7 +21,7 @@ export class TelegramBot {
     }
 
     async sendMessage(
-        chatId: number,
+        chatId: number | string,
         message: string,
         context: string = 'OCR_BOT',
         options?: { parse_mode?: ParseMode; disable_web_page_preview?: boolean }
@@ -45,7 +45,7 @@ export class TelegramBot {
         }
     }
 
-    async sendMsg(chatId: number, text: string, options?): Promise<void> {
+    async sendMsg(chatId: number | string, text: string, options?): Promise<void> {
         await this.bot.api.sendMessage(chatId, text, { ...options });
     }
 

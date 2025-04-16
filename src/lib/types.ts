@@ -60,3 +60,24 @@ export interface RefundRequest {
     refundUtr: string;
     fileUrl: string;
 }
+
+export interface BulkPayoutInterface {
+    id: string;
+    state: string;
+    creator_uid: string;
+    payment_gateway_id: string;
+    file_format: string;
+    payout_count: number | null;
+    total_amount: number | null;
+    max_sum_amount: number | null;
+    downloadable: boolean;
+    created_at: string;
+    'bulk_payout_download_logs': {
+        'id': string,
+        'bulk_payout_id': string,
+        'member_id': number,
+        'created_at': string;
+        'updated_at': string;
+        'downloaded_at': string;
+    }[];
+}

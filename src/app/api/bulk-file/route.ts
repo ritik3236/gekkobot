@@ -3,14 +3,21 @@ import { InputFile } from 'grammy';
 import { NextResponse } from 'next/server';
 
 import { OCRBot } from '@/lib/telegram/bot-instances';
+import { buildBulkPayoutPreProccessMsg } from '@/lib/telegram/messageBulider';
+import { BulkPayoutInterface } from '@/lib/types';
 
 const CHAT_ID = '-4770924782';
 const TestChatId = '1282110140';
 
+interface BulkPayoutResponse {
+    data: BulkPayoutInterface;
+    file_url: string
+}
+
 export async function POST(req: Request): Promise<NextResponse> {
     try {
         // Parse the incoming JSON containing a file_url URL
-        const { file_url }: { file_url: string } = await req.json();
+        const { file_url, data }: BulkPayoutResponse = await req.json();
 
         // Validate that the file_url is an absolute URL
         if (!file_url.startsWith('http://') && !file_url.startsWith('https://')) {
@@ -23,14 +30,14 @@ export async function POST(req: Request): Promise<NextResponse> {
         // Convert the response to a Node.js Buffer
         const buffer = Buffer.from(response.data);
 
-        // Optionally, extract the file name from the URL or set a default
-        const filename = file_url.split('/').pop() || 'document.xlsx';
-
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
-        const inputFile = new InputFile(buffer, filename);
+        const inputFile = new InputFile(buffer, data.id);
 
         // Send the document to Telegram
         await OCRBot.bot.api.sendDocument(TestChatId, inputFile);
+        const msg = buildBulkPayoutPreProccessMsg(data);
+
+        await OCRBot.sendMessage(TestChatId, msg);
 
         return NextResponse.json({ success: true });
 
