@@ -76,5 +76,6 @@ export const buildBulkPayoutPreProccessMsg = (bulkPayout: BulkPayoutInterface) =
         })),
     });
 
-    return '```File_Details:\n' + bulkPayoutMsg + '```';
+    return '```' + bulkPayout.id + '```\n' +
+        '```File_Details:\n' + bulkPayoutMsg + '```';
 };
