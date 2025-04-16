@@ -7,8 +7,8 @@ import { OCRBot } from '@/lib/telegram/bot-instances';
 import { buildBulkPayoutPreProccessMsg } from '@/lib/telegram/messageBulider';
 import { BulkPayoutInterface } from '@/lib/types';
 
-const CHAT_ID = '-4770924782';
 const TestChatId = '1282110140';
+const CHAT_ID = process.env.BULK_FILE_GROUP_ID || TestChatId;
 
 interface BulkPayoutResponse {
     data: BulkPayoutInterface;
@@ -39,10 +39,10 @@ export async function POST(req: Request): Promise<Response> {
         const inputFile = new InputFile(buffer, data.id);
 
         // Send the document to Telegram
-        await OCRBot.bot.api.sendDocument(TestChatId, inputFile);
+        await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
         const msg = buildBulkPayoutPreProccessMsg(data);
 
-        await OCRBot.sendMessage(TestChatId, msg, 'OCR_BOT', { parse_mode: 'MarkdownV2' });
+        await OCRBot.sendMessage(CHAT_ID, msg, 'OCR_BOT', { parse_mode: 'MarkdownV2' });
 
         return setCorsHeaders(NextResponse.json({ success: true }));
 
