@@ -4,26 +4,26 @@ import { NextResponse } from 'next/server';
 
 import { OCRBot } from '@/lib/telegram/bot-instances';
 
-const CHAT_ID = '1282110140';
+const CHAT_ID = '-4770924782';
 
 export async function POST(req: Request): Promise<NextResponse> {
     try {
-        // Parse the incoming JSON containing a filePath URL
-        const { filePath }: { filePath: string } = await req.json();
+        // Parse the incoming JSON containing a file_url URL
+        const { file_url }: { file_url: string } = await req.json();
 
-        // Validate that the filePath is an absolute URL
-        if (!filePath.startsWith('http://') && !filePath.startsWith('https://')) {
-            throw new Error(`Invalid URL provided: ${filePath}`);
+        // Validate that the file_url is an absolute URL
+        if (!file_url.startsWith('http://') && !file_url.startsWith('https://')) {
+            throw new Error(`Invalid URL provided: ${file_url}`);
         }
 
         // Fetch the file as binary data (arraybuffer) instead of stream
-        const response = await axios.get(filePath, { responseType: 'arraybuffer' });
+        const response = await axios.get(file_url, { responseType: 'arraybuffer' });
 
         // Convert the response to a Node.js Buffer
         const buffer = Buffer.from(response.data);
 
         // Optionally, extract the file name from the URL or set a default
-        const filename = filePath.split('/').pop() || 'document.xlsx';
+        const filename = file_url.split('/').pop() || 'document.xlsx';
 
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
         const inputFile = new InputFile(buffer, filename);
