@@ -37,7 +37,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         await OCRBot.bot.api.sendDocument(TestChatId, inputFile);
         const msg = buildBulkPayoutPreProccessMsg(data);
 
-        await OCRBot.sendMessage(TestChatId, msg);
+        await OCRBot.sendMessage(TestChatId, msg, 'OCR_BOT', { parse_mode: 'MarkdownV2' });
 
         return NextResponse.json({ success: true });
 
