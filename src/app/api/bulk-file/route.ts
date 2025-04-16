@@ -19,7 +19,7 @@ export async function OPTIONS(): Promise<Response> {
     return setCorsHeaders(new NextResponse(null, { status: 204 }));
 }
 
-export async function POST(req: Request): Promise<NextResponse> {
+export async function POST(req: Request): Promise<Response> {
     try {
         // Parse the incoming JSON containing a file_url URL
         const { file_url, data }: BulkPayoutResponse = await req.json();
@@ -44,14 +44,14 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         await OCRBot.sendMessage(TestChatId, msg, 'OCR_BOT', { parse_mode: 'MarkdownV2' });
 
-        return NextResponse.json({ success: true });
+        return setCorsHeaders(NextResponse.json({ success: true }));
 
     } catch (error) {
         console.error('Failed to send document to Telegram:', error);
 
-        return NextResponse.json({
+        return setCorsHeaders(NextResponse.json({
             error: 'OCR processing failed',
             details: error instanceof Error ? error.message : String(error),
-        }, { status: 500 });
+        }, { status: 500 }));
     }
 }
