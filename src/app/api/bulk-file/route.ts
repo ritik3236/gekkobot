@@ -35,8 +35,10 @@ export async function POST(req: Request): Promise<Response> {
         // Convert the response to a Node.js Buffer
         const buffer = Buffer.from(response.data);
 
+        const filename = file_url.split('/').pop() || 'document.xlsx';
+
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
-        const inputFile = new InputFile(buffer, data.id);
+        const inputFile = new InputFile(buffer, filename);
 
         // Send the document to Telegram
         await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
