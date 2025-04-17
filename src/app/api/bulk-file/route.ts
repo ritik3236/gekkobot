@@ -38,11 +38,13 @@ export async function POST(req: Request): Promise<Response> {
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
         const inputFile = new InputFile(buffer, data.id + '.xlsx');
 
-        // Send the document to Telegram
-        await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile);
         const msg = buildBulkPayoutPreProccessMsg(data);
 
-        await OCRBot.sendMessage(CHAT_ID, msg, 'OCR_BOT', { parse_mode: 'MarkdownV2' });
+        // Send the document to Telegram
+        await OCRBot.bot.api.sendDocument(CHAT_ID, inputFile, {
+            caption: msg,
+            parse_mode: 'MarkdownV2',
+        });
 
         return setCorsHeaders(NextResponse.json({ success: true }));
 
