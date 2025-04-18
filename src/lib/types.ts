@@ -96,6 +96,7 @@ export interface TransactionInterface {
     amount: number;
     createdAt: string;
 }
+
 export interface TransactionCreateInterface {
     uuid: string;
     sNo: number;
@@ -111,14 +112,16 @@ export interface BulkPayoutVerifierInterface {
         rows: any[][],
         expectedPayoutCount: number | null,
         expectedTotalAmount: number | null
-    ): {
-        isTotalAmountValid: boolean;
-        isTransactionCountValid: boolean;
-        transactionCount: number;
-        totalAmount: number;
-        errors: string[];
-        transactions: TransactionInterface[];
-    };
+    ): VerificationResult;
+}
+
+export interface VerificationResult {
+    isTotalAmountValid: boolean;
+    isTransactionCountValid: boolean;
+    transactionCount: number;
+    totalAmount: number;
+    errors: string[];
+    transactions: TransactionInterface[];
 }
 
 export interface FileSummaryCreateData {
@@ -126,4 +129,12 @@ export interface FileSummaryCreateData {
     transactionCount: string;
     duplicateCount: string;
     totalAmount: string;
+}
+
+export interface FileDetails {
+    valid: boolean;
+    fileName?: string;
+    fileFormat?: string;
+    transactionCount?: number;
+    totalAmount?: number;
 }

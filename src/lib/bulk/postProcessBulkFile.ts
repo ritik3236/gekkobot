@@ -1,131 +1,153 @@
+// bulkProcessor.ts
 import * as XLSX from 'xlsx';
 
 import { VerifierFactory } from '@/lib/bulk/verifiers/verifierFactory';
 import { dbInstance } from '@/lib/db/client';
 import { luxon } from '@/lib/localeDate';
 import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
+import { FileDetails, VerificationResult } from '@/lib/types';
 import { formatNumber } from '@/lib/utils';
 
-// const verificationCheck =
-// File Uniquness,
-// Transaction Uniquness
-// Amount Uniquness
-// Payout count
-// success icon ✅
-// fail icon ❌
+const FILE_VALIDATION_MESSAGES = {
+    FILE_UNIQUE: '✅ File Name: Unique',
+    FILE_DUPLICATE: '❌ File Name: Duplicate',
+    TRANSACTION_UNIQUE: '✅ Duplicate Transactions',
+    TRANSACTION_DUPLICATE: (count: number) => `❌ Duplicate Transactions: ${count}`,
+    TRANSACTION_COUNT_VALID: (count: number) => `✅ Transactions: ${count}`,
+    TRANSACTION_COUNT_INVALID: (count: number) => `❌ Transactions: ${count}`,
+    AMOUNT_VALID: (amount: string) => `✅ Total Amount: ${amount}`,
+    AMOUNT_INVALID: (amount: string) => `❌ Total Amount: ${amount}`,
+};
 
 export const postProcessBulkFile = async (repliedMessage: any, ctx: any) => {
-    // Validate replied message contains document and caption
-    if (!repliedMessage.document || !repliedMessage.caption) {
-        await ctx.reply('❌ Please reply to a valid bulk payout file');
-
-        return;
+    if (!repliedMessage.document?.file_id || !repliedMessage.caption) {
+        return ctx.reply('❌ Please reply to a valid bulk payout file');
     }
 
     try {
-        // Parse metadata from caption
         const details = parseCaption(repliedMessage.caption);
 
-        console.log(details);
+        if (!details.valid) return ctx.reply('❌ Invalid file metadata in caption');
 
-        if (!details.valid) {
-            await ctx.reply('❌ Invalid file metadata in caption');
+        const { transactions } = await processExcelFile(repliedMessage.document.file_id);
+        const verificationResult = verifyData(details, transactions);
+        const dbResult = await processDatabaseOperations(details, verificationResult);
 
-            return;
-        }
+        const responseMessage = buildValidationMessage(details, verificationResult, dbResult, repliedMessage.caption);
 
-        // Get file buffer from Telegram
-        const fileUrl = await BulkBot.getFileUrl(repliedMessage.document.file_id);
-        const response = await fetch(fileUrl);
-
-        if (!response.ok) throw new Error('Failed to download file');
-        const arrayBuffer = await response.arrayBuffer();
-
-        // Process Excel data
-        const workbook = XLSX.read(arrayBuffer, { type: 'array' });
-        const sheetName = workbook.SheetNames[0];
-        const sheet = workbook.Sheets[sheetName];
-        const rows: any[][] = XLSX.utils.sheet_to_json(sheet, { header: 1 });
-
-        // Run verification
-        const verifier = VerifierFactory.createVerifier('yes_bank_excel');
-        const result = verifier.validate(
-            rows,
-            details.transactionCount!,
-            details.totalAmount!
-        );
-
-        //Run db verification
-        const dbVerifier = VerifierFactory.createDbVerifier(details.fileName!, result.transactions);
-        const dbResult = await dbVerifier.validate();
-
-        console.log('dbResult', dbResult);
-
-        if (!dbResult.isTransactionValid || !dbResult.isFileValid) {
-            result.errors.push(...dbResult.errors);
-        }
-
-        if (dbResult.isFileValid) {
-            await dbInstance.createFileSummary({
-                duplicateCount: String(dbResult.duplicateTransactions),
-                fileName: details.fileName!,
-                totalAmount: String(result.totalAmount),
-                transactionCount: String(result.transactionCount),
-            });
-        }
-
-        if (dbResult.isTransactionValid) {
-            for (const transaction of result.transactions) {
-                const createdAtSql = luxon.fromFormat(transaction.createdAt, 'dd/MM/yyyy').toJSDate();
-
-                const payload = {
-                    uuid: transaction.tid,
-                    amount: transaction.amount,
-                    createdAt: createdAtSql,
-                    ifscCode: transaction.ifscCode,
-                    accountNumber: transaction.accountNumber,
-                    accountHolderName: transaction.accountHolderName,
-                    sNo: transaction.sNo,
-                    fileName: details.fileName,
-                };
-
-                await dbInstance.recordTransaction(payload);
-            }
-        }
-
-        // Build response message
-        const responseMessage = [
-            `${dbResult.isFileValid ? '✅' : '❌'} File Name: Unique`,
-            `${dbResult.isTransactionValid ? '✅' : '❌'} Duplicate Transactions: ${dbResult.duplicateTransactions.length}`,
-            `${result.isTransactionCountValid ? '✅' : '❌'} Transactions: ${result.transactionCount}`,
-            `${result.isTotalAmountValid ? '✅' : '❌'} Total Amount: ${formatNumber(result.totalAmount, {
-                style: 'currency',
-                currency: 'INR',
-            })}`,
-        ].join('\n');
-
-        await ctx.api.sendMessage(repliedMessage.chat.id,
-            '```' + repliedMessage.caption + '```'
-            + responseMessage
-            + '\n\n'
-            + '```Errors\n' + result.errors.join('\n') + '```',
-            {
-                reply_to_message_id: repliedMessage.message_id,
-                parse_mode: 'Markdown',
-            });
+        await sendFinalResponse(ctx, repliedMessage, responseMessage);
 
     } catch (error) {
-        console.error('Verification error:', error);
+        console.error('Bulk processing error:', error);
         await ctx.reply('⚠️ Error processing file. Please check the format and try again.');
     }
 };
 
-interface FileDetails {
-    valid: boolean;
-    fileName?: string;
-    fileFormat?: string;
-    transactionCount?: number;
-    totalAmount?: number;
+async function processExcelFile(fileId: string) {
+    const fileUrl = await BulkBot.getFileUrl(fileId);
+    const response = await fetch(fileUrl);
+
+    if (!response.ok) throw new Error('Failed to download file');
+
+    const workbook = XLSX.read(await response.arrayBuffer(), { type: 'array' });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const transactions = XLSX.utils.sheet_to_json<any>(sheet, { header: 1 });
+
+    return { transactions };
+}
+
+function verifyData(details: FileDetails, rows: any[]) {
+    const verifier = VerifierFactory.createVerifier(getFileType(rows));
+
+    return verifier.validate(
+        rows,
+        details.transactionCount!,
+        details.totalAmount!
+    );
+}
+
+function getFileType(rows: any[][]) {
+    const tags = new Set(rows.map((row) => row[0]));
+
+    if (tags.has('H') && tags.has('F')) return 'yes_bank_excel';
+}
+
+async function processDatabaseOperations(details: FileDetails, result: any) {
+    const dbVerifier = VerifierFactory.createDbVerifier(details.fileName!, result.transactions);
+    const dbResult = await dbVerifier.validate();
+
+    if (!dbResult.isTransactionValid || !dbResult.isFileValid) {
+        result.errors.push(...dbResult.errors);
+    }
+
+    if (dbResult.isFileValid) {
+        await dbInstance.createFileSummary({
+            duplicateCount: String(dbResult.duplicateTransactions),
+            fileName: details.fileName!,
+            totalAmount: String(result.totalAmount),
+            transactionCount: String(result.transactionCount),
+        });
+    }
+
+    if (dbResult.isTransactionValid) {
+        await bulkInsertTransactions(details, result.transactions);
+    }
+
+    return dbResult;
+}
+
+async function bulkInsertTransactions(details: FileDetails, transactions: any[]) {
+    for (const transaction of transactions) {
+        const payload = {
+            uuid: transaction.tid,
+            amount: transaction.amount,
+            createdAt: luxon.fromFormat(transaction.createdAt, 'dd/MM/yyyy').toJSDate(),
+            ifscCode: transaction.ifscCode,
+            accountNumber: transaction.accountNumber,
+            accountHolderName: transaction.accountHolderName,
+            sNo: transaction.sNo,
+            fileName: details.fileName,
+        };
+
+        await dbInstance.recordTransaction(payload);
+    }
+}
+
+function buildValidationMessage(details: FileDetails, result: VerificationResult, dbResult: any, caption: string) {
+    const totalAmount = formatNumber(result.totalAmount, {
+        style: 'currency',
+        currency: 'INR',
+    });
+
+    const messages = [
+        dbResult.isFileValid ? FILE_VALIDATION_MESSAGES.FILE_UNIQUE : FILE_VALIDATION_MESSAGES.FILE_DUPLICATE,
+        dbResult.isTransactionValid
+            ? FILE_VALIDATION_MESSAGES.TRANSACTION_UNIQUE
+            : FILE_VALIDATION_MESSAGES.TRANSACTION_DUPLICATE(dbResult.duplicateTransactions.length),
+        result.isTransactionCountValid
+            ? FILE_VALIDATION_MESSAGES.TRANSACTION_COUNT_VALID(result.transactionCount)
+            : FILE_VALIDATION_MESSAGES.TRANSACTION_COUNT_INVALID(result.transactionCount),
+        result.isTotalAmountValid
+            ? FILE_VALIDATION_MESSAGES.AMOUNT_VALID(String(totalAmount))
+            : FILE_VALIDATION_MESSAGES.AMOUNT_INVALID(String(totalAmount)),
+    ];
+
+    return [
+        '```' + caption + '```',
+        ...messages,
+        '\n```Errors\n' + result.errors.join('\n') + '```',
+    ].join('\n');
+}
+
+async function sendFinalResponse(ctx: any, repliedMessage: any, message: string) {
+    await ctx.api.sendMessage(
+        repliedMessage.chat.id,
+        message,
+        {
+            reply_to_message_id: repliedMessage.message_id,
+            parse_mode: 'Markdown',
+        }
+    );
 }
 
 // Helper function to parse caption metadata
@@ -148,6 +170,7 @@ function parseCaption(caption: string): FileDetails {
             !isNaN(result.transactionCount) &&
             !isNaN(result.totalAmount);
 
+        console.log(result);
     } catch (error) {
         console.error('Caption parsing error:', error);
     }
