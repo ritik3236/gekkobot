@@ -96,6 +96,15 @@ export interface TransactionInterface {
     amount: number;
     createdAt: string;
 }
+export interface TransactionCreateInterface {
+    uuid: string;
+    sNo: number;
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    amount: number;
+    createdAt: Date;
+}
 
 export interface BulkPayoutVerifierInterface {
     validate(

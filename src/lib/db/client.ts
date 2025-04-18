@@ -5,7 +5,7 @@ import mysql, { Connection } from 'mysql2/promise';
 import * as schema from '@/lib/db/schema';
 import { luxon } from '@/lib/localeDate';
 import { isNumeric } from '@/lib/numberHelper';
-import { FileSummaryCreateData } from '@/lib/types';
+import { FileSummaryCreateData, TransactionCreateInterface } from '@/lib/types';
 
 interface DbConfig {
     host: string;
@@ -132,6 +132,21 @@ export class Database {
     }
 
     // --- Transactions Methods ---
+    async recordTransaction(payload: TransactionCreateInterface): Promise<schema.Transaction> {
+        console.log('Recording transaction:', payload);
+
+        try {
+            const db = await this.getDb();
+            const [res] = await db.insert(schema.transactions).values(payload);
+
+            console.log('Transaction recorded:', { id: res.insertId });
+
+            return await this.getTransactionById(res.insertId);
+        } catch (error) {
+            console.error('Error recording transaction:', error);
+            throw error;
+        }
+    }
 
     async getTransactionById(id: number | string): Promise<schema.Transaction | undefined> {
         try {
@@ -322,10 +337,16 @@ function prepareTransactionQuery(
     });
     const uniquePatterns = [...new Set(patterns)];
 
-    const nameCondition = sql`UPPER(${schema.transactions.accountHolderName}) = ${name.toUpperCase()}`;
+    const nameCondition = sql`UPPER(
+    ${schema.transactions.accountHolderName}
+    )
+    =
+    ${name.toUpperCase()}`;
     const amountCondition = eq(schema.transactions.amount, amount);
     const dateCondition = or(
-        ...uniquePatterns.map((pattern) => sql`${schema.transactions.fileName} LIKE ${`%${pattern}%`}`)
+        ...uniquePatterns.map((pattern) => sql`${schema.transactions.fileName}
+        LIKE
+        ${`%${pattern}%`}`)
     );
 
     return { nameCondition, amountCondition, dateCondition };
