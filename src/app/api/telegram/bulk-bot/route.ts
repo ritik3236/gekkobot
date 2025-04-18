@@ -1,10 +1,10 @@
 import { Update } from '@grammyjs/types';
 import { NextResponse } from 'next/server';
 
-import { OCRBot } from '@/lib/telegram/bot-ocr-instance';
+import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
 
 export async function POST(req: Request): Promise<NextResponse> {
-    console.log('Webhook hit at /api/telegram/ocr_bot -', new Date().toISOString());
+    console.log('Webhook hit at /api/telegram/bulk_bot -', new Date().toISOString());
 
     try {
         const update: Update = await req.json();
@@ -16,11 +16,11 @@ export async function POST(req: Request): Promise<NextResponse> {
             return NextResponse.json({ success: false, error: 'No chat ID' });
         }
 
-        if (!OCRBot.bot.isInited()) {
-            await OCRBot.bot.init();
+        if (!BulkBot.bot.isInited()) {
+            await BulkBot.bot.init();
         }
 
-        await OCRBot.bot.handleUpdate(update);
+        await BulkBot.bot.handleUpdate(update);
 
         return NextResponse.json({ success: true });
     } catch (error) {
@@ -29,7 +29,7 @@ export async function POST(req: Request): Promise<NextResponse> {
         const chatId: number | undefined = update?.message?.chat?.id;
 
         if (chatId) {
-            await OCRBot.sendMessage(chatId, 'Error receiving image.');
+            await BulkBot.sendMessage(chatId, 'Error receiving image.');
         }
 
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });

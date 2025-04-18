@@ -202,7 +202,46 @@ export class Database {
         });
     };
 
+    async checkTransactionExists(tid: string, amount: number): Promise<boolean> {
+        try {
+            const db = await this.getDb();
+
+            const query = db.select()
+                .from(schema.transactions)
+                .where(and(
+                    eq(schema.transactions.uuid, tid),
+                    eq(schema.transactions.amount, String(amount))
+                ))
+                .limit(1);
+
+            console.log('Generated SQL - [checkTransactionExists]: ', query.toSQL());
+
+            const result = await query;
+
+            return result.length > 0;
+        } catch (error) {
+            console.error('Error checking transaction existence:', error);
+            throw error;
+        }
+    }
+
     // --- File_Summaries Methods ---
+
+    async checkFileNameExists(fileName: string): Promise<boolean> {
+        const db = await this.getDb();
+
+        try {
+            const result = await db.select()
+                .from(schema.fileSummaries)
+                .where(eq(schema.fileSummaries.fileName, fileName))
+                .limit(1);
+
+            return result.length > 0;
+        } catch (error) {
+            console.error('Error checking filename existence:', error);
+            throw error;
+        }
+    }
 
     async close(): Promise<void> {
         if (this.connection) {

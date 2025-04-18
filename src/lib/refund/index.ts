@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { dbInstance } from '@/lib/db/client';
 import { BankRefund, Transaction } from '@/lib/db/schema';
-import { OCRBot } from '@/lib/telegram/bot-instances';
+import { OCRBot } from '@/lib/telegram/bot-ocr-instance';
 import { buildRefundMsg, buildTransactionMsg } from '@/lib/telegram/messageBulider';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
 import { escapeTelegramEntities } from '@/lib/utils';

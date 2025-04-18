@@ -44,3 +44,16 @@ export const transactions = mysqlTable('transactions', {
 });
 
 export type Transaction = typeof transactions.$inferSelect;
+
+export const fileSummaries = mysqlTable('file_summaries', {
+    id: int('id').primaryKey().autoincrement(),
+
+    fileName: varchar('file_name', { length: 255 }).notNull().unique(),
+    transactionCount: varchar('transaction_count', { length: 16 }),
+    duplicateCount: varchar('duplicate_count', { length: 16 }),
+    totalAmount: decimal('total_amount', { precision: 12, scale: 2 }),
+    createdAt: timestamp('created_at').defaultNow(),
+    updatedAt: timestamp('updated_at').defaultNow(),
+});
+
+export type FileSummary = typeof fileSummaries.$inferSelect;

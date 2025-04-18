@@ -21,7 +21,8 @@
     "node-telegram-bot-api": "^0.66.0",
     "react": "18.3.1",
     "react-dom": "18.3.1",
-    "tesseract.js": "^6.0.0"
+    "tesseract.js": "^6.0.0",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@stylistic/eslint-plugin": "^2.13.0",

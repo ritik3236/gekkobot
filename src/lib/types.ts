@@ -81,3 +81,33 @@ export interface BulkPayoutInterface {
         'downloaded_at': string;
     }[];
 }
+
+export interface BulkPayoutResponse {
+    data: BulkPayoutInterface;
+    file_url: string;
+}
+
+export interface TransactionInterface {
+    tid: string;
+    fileName: string;
+    sNo: number;
+    accountHolderName: string;
+    accountNumber: string;
+    ifscCode: string;
+    amount: number;
+    createdAt: string;
+}
+
+export interface BulkPayoutVerifierInterface {
+    validate(
+        rows: any[][],
+        expectedPayoutCount: number | null,
+        expectedTotalAmount: number | null
+    ): {
+        isValid: boolean;
+        transactionCount: number;
+        totalAmount: number;
+        errors: string[];
+        transactions: TransactionInterface[];
+    };
+}

@@ -1,11 +1,10 @@
 import * as process from 'node:process';
 
 import { dbInstance } from '@/lib/db/client';
-import { processImageInBackground } from '@/lib/db/refund';
+import { processImageInBackground } from '@/lib/refund';
 import { TelegramBot } from '@/lib/telegram/bot';
 import { buildRefundAndTransactionMsg } from '@/lib/telegram/messageBulider';
 
-// Bot 1 (e.g., your existing OCR bot)
 export const OCRBot = new TelegramBot(process.env.TELEGRAM_BOT_TOKEN_OCR || '');
 
 OCRBot.bot.init();
