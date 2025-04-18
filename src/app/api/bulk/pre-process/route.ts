@@ -8,7 +8,7 @@ import { buildBulkPayoutPreProcessMsg } from '@/lib/telegram/messageBulider';
 import { BulkPayoutInterface } from '@/lib/types';
 
 const TestChatId = '1282110140';
-const CHAT_ID = TestChatId;
+const CHAT_ID = process.env.BULK_FILE_GROUP_ID || TestChatId;
 
 interface BulkPayoutResponse {
     data: BulkPayoutInterface;
