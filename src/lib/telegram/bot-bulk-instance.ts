@@ -87,8 +87,6 @@ BulkBot.bot.on('message', async (ctx) => {
             console.error('Verification error:', error);
             await ctx.reply('⚠️ Error processing file. Please check the format and try again.');
         }
-    } else {
-        await ctx.reply('ℹ️ Reply "Verify" to a bulk payout file to validate it');
     }
 });
 
