@@ -4,11 +4,11 @@ import { NextResponse } from 'next/server';
 
 import { setCorsHeaders } from '@/lib/middleware';
 import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
-import { buildBulkPayoutPreProccessMsg } from '@/lib/telegram/messageBulider';
+import { buildBulkPayoutPreProcessMsg } from '@/lib/telegram/messageBulider';
 import { BulkPayoutInterface } from '@/lib/types';
 
 const TestChatId = '1282110140';
-const CHAT_ID = process.env.BULK_FILE_GROUP_ID || TestChatId;
+const CHAT_ID = TestChatId;
 
 interface BulkPayoutResponse {
     data: BulkPayoutInterface;
@@ -26,8 +26,10 @@ export async function POST(req: Request): Promise<Response> {
             throw new Error(`Invalid URL provided: ${file_url}`);
         }
 
+        const { hostname } = new URL(req.headers.get('origin'));
+
         // check if origin come from test server
-        if (['pay.coinfinacle.com', 'localhost'].includes(req.headers.get('origin') || '')) {
+        if (['pay.coinfinacle.com', 'localhost'].includes(hostname)) {
             chat_id = TestChatId;
         }
 
@@ -40,7 +42,7 @@ export async function POST(req: Request): Promise<Response> {
         // Create an InputFile from the buffer, ensuring Telegram sees it as a file
         const inputFile = new InputFile(buffer, data.id + '.xlsx');
 
-        const msg = buildBulkPayoutPreProccessMsg(data);
+        const msg = buildBulkPayoutPreProcessMsg(data);
 
         // Send the document to Telegram
         await BulkBot.bot.api.sendDocument(chat_id, inputFile, {

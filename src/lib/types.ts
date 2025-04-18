@@ -89,7 +89,6 @@ export interface BulkPayoutResponse {
 
 export interface TransactionInterface {
     tid: string;
-    fileName: string;
     sNo: number;
     accountHolderName: string;
     accountNumber: string;
@@ -104,10 +103,18 @@ export interface BulkPayoutVerifierInterface {
         expectedPayoutCount: number | null,
         expectedTotalAmount: number | null
     ): {
-        isValid: boolean;
+        isTotalAmountValid: boolean;
+        isTransactionCountValid: boolean;
         transactionCount: number;
         totalAmount: number;
         errors: string[];
         transactions: TransactionInterface[];
     };
+}
+
+export interface FileSummaryCreateData {
+    fileName: string;
+    transactionCount: string;
+    duplicateCount: string;
+    totalAmount: string;
 }

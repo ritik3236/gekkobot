@@ -1,4 +1,5 @@
-import { BulkPayoutVerifierInterface } from '@/lib/types';
+import { DatabaseVerifier } from '@/lib/bulk/verifiers/dbVerifier';
+import { BulkPayoutVerifierInterface, TransactionInterface } from '@/lib/types';
 
 import { DemoBankExcelVerifier } from './demoBankExcelVerifier';
 import { GeneralExcelVerifier } from './generalExcelVerifier';
@@ -19,5 +20,9 @@ export class VerifierFactory {
         }
 
         throw new Error(`Unsupported file format: ${fileFormat}`);
+    }
+
+    static createDbVerifier(fileName: string, transactions: TransactionInterface[]) {
+        return new DatabaseVerifier(fileName, transactions);
     }
 }

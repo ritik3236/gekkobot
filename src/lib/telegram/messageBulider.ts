@@ -61,7 +61,7 @@ export const buildRefundAndTransactionMsg = (refund: BankRefund, transaction: Tr
         + '\n' + buildTransactionMsg(transaction);
 };
 
-export const buildBulkPayoutPreProccessMsg = (bulkPayout: BulkPayoutInterface) => {
+export const buildBulkPayoutPreProcessMsg = (bulkPayout: BulkPayoutInterface) => {
     if (!bulkPayout) {
         return '\nBulk Payout details not found';
     }

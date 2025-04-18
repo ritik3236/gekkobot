@@ -20,11 +20,12 @@ export class YesBankExcelVerifier implements BulkPayoutVerifierInterface {
                     accountNumber: row[8],
                     amount: amount,
                     createdAt: row[15],
-                    fileName: '',
                     ifscCode: row[7],
                     sNo: index + 3,
                     tid: row[14],
                 };
+
+                console.log(transaction);
 
                 if (isNaN(amount)) {
                     const errorMsg = `Invalid amount in row ${index + 3} | Tid: ${row[14]}`;

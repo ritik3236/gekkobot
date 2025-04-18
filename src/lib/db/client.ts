@@ -5,6 +5,7 @@ import mysql, { Connection } from 'mysql2/promise';
 import * as schema from '@/lib/db/schema';
 import { luxon } from '@/lib/localeDate';
 import { isNumeric } from '@/lib/numberHelper';
+import { FileSummaryCreateData } from '@/lib/types';
 
 interface DbConfig {
     host: string;
@@ -227,14 +228,52 @@ export class Database {
 
     // --- File_Summaries Methods ---
 
+    async createFileSummary(payload: FileSummaryCreateData): Promise<schema.FileSummary> {
+        console.log('Recording refund:', payload);
+
+        try {
+            const db = await this.getDb();
+            const [res] = await db.insert(schema.fileSummaries).values(payload);
+
+            console.log('File summary recorded:', { id: res.insertId });
+
+            return await this.getFileSummaryById(res.insertId);
+        } catch (error) {
+            console.error('Error recording file summary:', error);
+            throw error;
+        }
+    }
+
+    async getFileSummaryById(id: number): Promise<schema.FileSummary | undefined> {
+        try {
+            const db = await this.getDb();
+            const query = db
+                .select()
+                .from(schema.fileSummaries)
+                .where(eq(schema.fileSummaries.id, id));
+
+            console.log('Generated SQL - [getFileSummaryById]: ', query.toSQL());
+
+            const result = await query;
+
+            return result[0];
+        } catch (error) {
+            console.error('Error retrieving file summary:', error);
+            throw error;
+        }
+    }
+
     async checkFileNameExists(fileName: string): Promise<boolean> {
         const db = await this.getDb();
 
         try {
-            const result = await db.select()
+            const query = db.select()
                 .from(schema.fileSummaries)
-                .where(eq(schema.fileSummaries.fileName, fileName))
-                .limit(1);
+                .where(eq(schema.fileSummaries.fileName, fileName));
+
+            console.log('Generated SQL - [checkFileNameExists]: ', query.toSQL());
+
+            const result = await query;
 
             return result.length > 0;
         } catch (error) {

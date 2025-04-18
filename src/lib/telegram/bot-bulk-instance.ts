@@ -1,6 +1,7 @@
 import * as XLSX from 'xlsx';
 
 import { VerifierFactory } from '@/lib/bulk';
+import { dbInstance } from '@/lib/db/client';
 import { TelegramBot } from '@/lib/telegram/bot';
 import { formatNumber } from '@/lib/utils';
 
@@ -19,6 +20,14 @@ BulkBot.bot.command('help', async (ctx) => {
 BulkBot.bot.command('ping', async (ctx) => {
     await ctx.reply('Pong!');
 });
+
+// const verificationCheck =
+// File Uniquness,
+// Transaction Uniquness
+// Amount Uniquness
+// Payout count
+// success icon ✅
+// fail icon ❌
 
 // check for reply of a msg
 BulkBot.bot.on('message', async (ctx) => {
@@ -66,29 +75,45 @@ BulkBot.bot.on('message', async (ctx) => {
             );
 
             //Run db verification
+            const dbVerifier = VerifierFactory.createDbVerifier(details.fileName!, result.transactions);
+            const dbResult = await dbVerifier.validate();
+
+            console.log('dbResult', dbResult);
+
+            if (!dbResult.isTransactionValid || !dbResult.isFileValid) {
+                result.errors.push(...dbResult.errors);
+            }
+
+            if (dbResult.isFileValid) {
+                await dbInstance.createFileSummary({
+                    duplicateCount: String(dbResult.duplicateTransactions),
+                    fileName: details.fileName!,
+                    totalAmount: String(result.totalAmount),
+                    transactionCount: String(result.transactionCount),
+                });
+            }
 
             // Build response message
             const responseMessage = [
-                result.isValid ? '✅ Verification Successful!' : '❌ Verification Failed!',
-                `Transactions: ${result.transactionCount}`,
-                `Total Amount: ${formatNumber(result.totalAmount, {
+                `${dbResult.isFileValid ? '✅' : '❌'} File Name: Unique`,
+                `${dbResult.isTransactionValid ? '✅' : '❌'} Duplicate Transactions: ${dbResult.duplicateTransactions.length}`,
+                `${result.isTransactionCountValid ? '✅' : '❌'} New Transactions: ${result.transactionCount}`,
+                `${result.isTotalAmountValid ? '✅' : '❌'} Total Amount: ${formatNumber(result.totalAmount, {
                     style: 'currency',
                     currency: 'INR',
                 })}`,
-                ...(result.errors.length > 0 ? ['\nErrors:', ...result.errors] : []),
+                ...(result.errors.length > 0 ? ['```' + '\nErrors:', ...result.errors + '```'] : []),
             ].join('\n');
 
             await ctx.api.sendMessage(repliedMessage.chat.id, '```' + repliedMessage.caption + '```' + responseMessage, {
                 reply_to_message_id: repliedMessage.message_id,
-                parse_mode: 'Markdown', // Optional: Add formatting if needed
+                parse_mode: 'Markdown',
             });
 
         } catch (error) {
             console.error('Verification error:', error);
             await ctx.reply('⚠️ Error processing file. Please check the format and try again.');
         }
-    } else {
-        await ctx.reply('ℹ️ Reply "Verify" to a bulk payout file to validate it');
     }
 });
 
@@ -108,6 +133,7 @@ BulkBot.bot.on('my_chat_member', (ctx) => {
 
 interface FileDetails {
     valid: boolean;
+    fileName?: string;
     fileFormat?: string;
     transactionCount?: number;
     totalAmount?: number;
@@ -117,15 +143,17 @@ interface FileDetails {
 function parseCaption(caption: string): FileDetails {
     const result: FileDetails = { valid: false };
     const patterns = {
+        fileName: /File Name:\s*(.+)/i,
         fileFormat: /File Format:\s*(.+)/i,
         transactionCount: /Transaction Count:\s*(\d+)/i,
         totalAmount: /Total Amount:\s*₹?([\d,.]+)/i,
     };
 
     try {
+        result.fileName = caption.match(patterns.fileName)?.[1]?.toLowerCase() + '.xlsx';
         result.fileFormat = caption.match(patterns.fileFormat)?.[1]?.toLowerCase();
         result.transactionCount = parseInt(caption.match(patterns.transactionCount)?.[1] || '');
-        result.totalAmount = +caption.match(patterns.totalAmount)?.[1] || 0;
+        result.totalAmount = +caption.match(patterns.totalAmount)?.[1]?.replaceAll(',', '');
 
         result.valid = !!result.fileFormat &&
             !isNaN(result.transactionCount) &&

@@ -1,7 +1,8 @@
 import { dbInstance } from '@/lib/db/client';
 
 interface VerificationResult {
-    isValid: boolean;
+    isTransactionValid: boolean;
+    isFileValid: boolean;
     errors: string[];
     duplicateTransactions: Array<{ tid: string; amount: number }>;
 }
@@ -15,12 +16,13 @@ export class DatabaseVerifier {
         this.transactions = transactions;
     }
 
-    async verify(): Promise<VerificationResult> {
+    async validate(): Promise<VerificationResult> {
         const errors: string[] = [];
+        let fileNameExists: boolean;
         const duplicateTransactions: Array<{ tid: string; amount: number }> = [];
 
         // Check if filename exists in file_summaries
-        const fileNameExists = await dbInstance.checkFileNameExists(this.fileName);
+        fileNameExists = await dbInstance.checkFileNameExists(this.fileName);
 
         if (fileNameExists) {
             errors.push(`File name '${this.fileName}' already exists in the system`);
@@ -39,11 +41,10 @@ export class DatabaseVerifier {
         await Promise.all(transactionChecks);
 
         return {
-            isValid: errors.length === 0,
+            isFileValid: !fileNameExists,
+            isTransactionValid: duplicateTransactions.length === 0,
             errors,
             duplicateTransactions,
         };
     }
 }
-
-// Add this to
