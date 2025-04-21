@@ -64,8 +64,6 @@ export function getFileDataType(rows: any[][]) {
 export function getTransactionsFromFile(rows: any[][], fileName: string) {
     const fileType = getFileDataType(rows);
 
-    console.log('fileType', fileType);
-
     switch (fileType) {
         case 'type_1_cnb':
             return getType1CnbTransactions(rows, fileName);
