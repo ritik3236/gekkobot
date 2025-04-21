@@ -54,6 +54,20 @@ const fileTypeColumns = {
         'Status',
         'Error Description',
     ],
+    type_3_cnb: [
+        'Record No',
+        'Value Date',
+        'Payment Type',
+        'Transaction Reference',
+        'Debit Account Number',
+        'Beneficiary Name',
+        'Beneficiary Account Number',
+        'Benficiary Bank IFSC',
+        'Amount',
+        'Currency',
+        'RBI/UTR Reference Number',
+        'Status',
+    ],
 
     type_2_msme: [
         'RECORD',
@@ -74,8 +88,10 @@ export function getFileDataType(rows: any[][]) {
         return 'type_2_msme';
     } else if (rows[5]?.length === fileTypeColumns.type_1_cnb.length && rows[5].every((column) => fileTypeColumns.type_1_cnb.includes(column))) {
         return 'type_1_cnb';
-    } else if (rows[5]?.length === fileTypeColumns.type_2_cnb.length && rows[0].every((column) => fileTypeColumns.type_2_cnb.includes(column))) {
+    } else if (rows[5]?.length === fileTypeColumns.type_2_cnb.length && rows[5].every((column) => fileTypeColumns.type_2_cnb.includes(column))) {
         return 'type_2_cnb';
+    } else if (rows[5]?.length === fileTypeColumns.type_3_cnb.length && rows[5].every((column) => fileTypeColumns.type_3_cnb.includes(column))) {
+        return 'type_3_cnb';
     } else if (tags.has('H') && tags.has('F')) {
         return 'type_3_yes_bank';
     } else {
@@ -91,6 +107,8 @@ export function getTransactionsFromFile(rows: any[][], fileName: string) {
             return getType1CnbTransactions(rows, fileName);
         case 'type_2_cnb':
             return getType2CnbTransactions(rows, fileName);
+        case 'type_3_cnb':
+            return getType3CnbTransactions(rows, fileName);
         case 'type_2_msme':
             return;
         case 'type_3_yes_bank':
@@ -148,6 +166,36 @@ function getType2CnbTransactions(rows: any[][], fileName: string) {
             status: 'created',
             remark: row[15],
             uuid: row[10],
+            bankRefundUuid: '',
+            fileName: fileName,
+        };
+
+        txns.push(txn);
+
+        console.log('txn', txn);
+    });
+
+    return txns;
+}
+
+function getType3CnbTransactions(rows: any[][], fileName: string) {
+    const txns: Partial<Transaction>[] = [];
+
+    rows.forEach((row) => {
+        if (!isNumeric(3) || !isNumeric(row[0])) return;
+
+        const txn: Partial<Transaction> = {
+            accountHolderName: row[5],
+            accountNumber: row[6],
+            ifscCode: row[7],
+            amount: row[8],
+            utr: row[10],
+            sNo: +row[0],
+            transferType: '',
+            txnDate: luxon.fromFormat(row[1], 'dd/MM/yyyy').toJSDate(),
+            status: 'created',
+            remark: row[11],
+            uuid: row[3],
             bankRefundUuid: '',
             fileName: fileName,
         };
