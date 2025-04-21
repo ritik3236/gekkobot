@@ -9,6 +9,8 @@ export const UTR_CHAT_ID = process.env.TELEGRAM_CHAT_ID_UTR || -4751668590;
 
 // check for reply of a msg
 UtrBot.bot.on('message', async (ctx) => {
+    console.log('Handling message of UTR bot', ctx.msg);
+
     if (ctx.msg.document?.file_id && +ctx.chat.id === +UTR_CHAT_ID) {
         await postProcessBankFile(ctx);
     }
