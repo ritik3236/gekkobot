@@ -1,4 +1,4 @@
-import { BankRefund, Transaction } from '@/lib/db/schema';
+import { BankFileTransaction, BankRefund, Transaction } from '@/lib/db/schema';
 import { localeDate } from '@/lib/localeDate';
 import { BulkPayoutInterface } from '@/lib/types';
 import { escapeTelegramEntities, formatNumber } from '@/lib/utils';
@@ -78,4 +78,26 @@ export const buildBulkPayoutPreProcessMsg = (bulkPayout: BulkPayoutInterface) =>
 
     return '```' + bulkPayout.id + '```\n' +
         '```File_Details:\n' + bulkPayoutMsg + '```';
+};
+
+export const utrProcessMsg = (payload: Partial<BankFileTransaction>) => {
+    if (!payload) {
+        return '\nTransaction details not found';
+    }
+
+    const txnMsg = buildMessagePayload({
+        'Status': payload.status,
+        'Transaction UUID': payload.uuid,
+        'File Name': payload.fileName,
+        'UTR': payload.utr,
+        'S.No': payload.sNo,
+
+        'Account No': escapeTelegramEntities(payload.accountNumber),
+        'Name': escapeTelegramEntities(payload.accountHolderName),
+        'Amount': formatNumber(payload.amount, { style: 'currency', currency: 'INR' }),
+        'Transaction Date': localeDate(payload.txnDate, 'dmy'),
+    });
+
+    return '```' + payload.accountNumber + '```\n' +
+        '```Transaction_Details:\n' + txnMsg + '```';   
 };
