@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { UtrBot } from '@/lib/telegram/utr-bot-instance';
 
 export async function POST(req: Request): Promise<NextResponse> {
-    console.log('Webhook hit at /api/telegram/bulk_bot -', new Date().toISOString());
+    console.log('Webhook hit at /api/telegram/utr_bot -', new Date().toISOString());
 
     try {
         const update: Update = await req.json();

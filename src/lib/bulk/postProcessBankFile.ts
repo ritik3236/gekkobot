@@ -1,23 +1,27 @@
-import { Context } from 'grammy';
+import { Update } from '@grammyjs/types';
 
 import { dbInstance } from '@/lib/db/client';
 import { Transaction } from '@/lib/db/schema';
 import { getTransactionsFromFile, processExcelFile } from '@/lib/file_helper';
-import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
+import { UtrBot } from '@/lib/telegram/utr-bot-instance';
 
-export const postProcessBankFile = async (ctx: Context) => {
+export const postProcessBankFile = async (ctx: Update) => {
+
+    console.log('IN COMMAND', ctx);
+    const chatId = ctx.message.chat.id;
+
     try {
-        const fileId = ctx.msg.document.file_id;
-        const fileName = ctx.msg.document.file_name;
+        const fileId = ctx.message.document.file_id;
+        const fileName = ctx.message.document.file_name;
 
-        const fileUrl = await BulkBot.getFileUrl(fileId);
+        const fileUrl = await UtrBot.getFileUrl(fileId);
         const fileData = await processExcelFile(fileUrl);
 
         const transactions = getTransactionsFromFile(fileData.transactions, fileName);
 
         const { errors } = await createTransaction(transactions);
 
-        await ctx.api.sendMessage(ctx.chat.id,
+        await UtrBot.bot.api.sendMessage(chatId,
             'Transaction Recorded. CronJob will be picking soon 🔜' +
             '\n```Errors\n' + errors.join('\n') + '```',
             { reply_to_message_id: ctx.message.message_id, parse_mode: 'Markdown' }
@@ -25,7 +29,7 @@ export const postProcessBankFile = async (ctx: Context) => {
     } catch (e) {
         console.log(e);
 
-        await ctx.api.sendMessage(ctx.chat.id, e.message || JSON.stringify(e), { reply_to_message_id: ctx.message.message_id });
+        await UtrBot.bot.api.sendMessage(chatId, e.message || JSON.stringify(e), { reply_to_message_id: ctx.message.message_id });
     }
 };
 
