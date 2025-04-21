@@ -31,6 +31,8 @@ export const postProcessBankFile = async (ctx: Context) => {
 
 const createTransaction = async (transactions: Partial<Transaction>[]) => {
     const errors = [];
+
+    await dbInstance.initialize();
     const transactionChecks = transactions.map(async (tx) => {
         const exists = await dbInstance.checkBankFileTransactionExists(tx.utr, tx.amount);
 

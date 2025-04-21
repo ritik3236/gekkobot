@@ -49,7 +49,7 @@ export class Database {
         };
     }
 
-    private async initialize(): Promise<void> {
+    public async initialize(): Promise<void> {
         if (!this.connection) {
             this.connection = await mysql.createConnection(this.dbConfig);
             console.log('Database connection established');

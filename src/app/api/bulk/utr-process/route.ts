@@ -41,9 +41,17 @@ export async function POST(req: Request): Promise<Response> {
                     amount: processableWithdraw[0].amount,
                     error: error || 'No error',
                 });
-                error?.length === 0 && await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'success');
+
+                if (error?.length > 0) {
+                    const successMsg = utrProcessMsg({ ...transaction, status: '❌ failed' });
+
+                    await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, successMsg, { parse_mode: 'Markdown' });
+                    continue;
+                }
+
                 const successMsg = utrProcessMsg({ ...transaction, status: '✅ Success' });
 
+                await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'success');
                 await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, successMsg, { parse_mode: 'Markdown' });
             } else if (processableWithdraw.length > 1) {
                 errors.push(`Multiple withdraws found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
@@ -63,7 +71,7 @@ export async function POST(req: Request): Promise<Response> {
         return NextResponse.json({ data: updatedPayouts, errors });
 
     } catch (e) {
-        NextResponse.json({ error: e }, { status: 500 });
+        return NextResponse.json({ error: e || 'Internal Server Error' }, { status: 500 });
     }
 }
 

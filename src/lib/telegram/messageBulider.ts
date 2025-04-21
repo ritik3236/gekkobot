@@ -87,7 +87,7 @@ export const utrProcessMsg = (payload: Partial<BankFileTransaction>) => {
 
     const txnMsg = buildMessagePayload({
         'Status': payload.status,
-        'Transaction UUID': payload.uuid,
+        'Txid': payload.uuid,
         'File Name': payload.fileName,
         'UTR': payload.utr,
         'S.No': payload.sNo,
