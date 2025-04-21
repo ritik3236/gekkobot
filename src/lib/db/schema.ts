@@ -21,7 +21,7 @@ export const bankRefunds = mysqlTable('bank_refunds', {
 
 export type BankRefund = typeof bankRefunds.$inferSelect;
 
-export const transactions = mysqlTable('transactions', {
+const transactionTableColumn = {
     id: int('id').primaryKey().autoincrement(),
 
     accountHolderName: varchar('account_holder_name', { length: 64 }),
@@ -35,24 +35,34 @@ export const transactions = mysqlTable('transactions', {
     transferType: varchar('transfer_type', { length: 16 }),
     txnDate: datetime('txn_date'),
     utr: varchar('utr', { length: 64 }),
-    uuid: varchar('uuid', { length: 64 }).notNull().unique(),
 
     createdAt: timestamp('created_at').defaultNow(),
     updatedAt: timestamp('updated_at').defaultNow(),
 
     bankRefundUuid: varchar('bank_refund_uuid', { length: 64 }),
+};
+
+export const transactions = mysqlTable('transactions', {
+    ...transactionTableColumn,
+    uuid: varchar('uuid', { length: 64 }).notNull().unique(),
+});
+export type Transaction = typeof transactions.$inferSelect;
+
+export const bank_file_transactions = mysqlTable('bank_file_transactions', {
+    ...transactionTableColumn,
+    uuid: varchar('uuid', { length: 64 }),
 });
 
-export type Transaction = typeof transactions.$inferSelect;
+export type BankFileTransaction = typeof bank_file_transactions.$inferSelect;
 
 export const fileSummaries = mysqlTable('file_summaries', {
     id: int('id').primaryKey().autoincrement(),
 
-    fileName: varchar('file_name', { length: 255 }).notNull().unique(),
-    transactionCount: varchar('transaction_count', { length: 16 }),
-    duplicateCount: varchar('duplicate_count', { length: 16 }),
-    totalAmount: decimal('total_amount', { precision: 12, scale: 2 }),
     createdAt: timestamp('created_at').defaultNow(),
+    duplicateCount: varchar('duplicate_count', { length: 16 }),
+    fileName: varchar('file_name', { length: 255 }).notNull().unique(),
+    totalAmount: decimal('total_amount', { precision: 12, scale: 2 }),
+    transactionCount: varchar('transaction_count', { length: 16 }),
     updatedAt: timestamp('updated_at').defaultNow(),
 });
 

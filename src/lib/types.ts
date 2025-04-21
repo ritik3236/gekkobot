@@ -19,7 +19,7 @@ export interface PartnerBalance {
     timestamp: number;
 }
 
-export interface Payout {
+export interface PayoutInterface {
     id: string;
     uid: string;
     email: string;
@@ -41,6 +41,16 @@ export interface Payout {
     metadata: null;
     created_at: string;
     updated_at: string;
+}
+
+export interface WithdrawInterface extends PayoutInterface {
+    beneficiary: {
+        data: {
+            bank_ifsc_code: string;
+            full_name: string;
+            account_number: string;
+        }
+    }
 }
 
 export interface RefundOCRFields {

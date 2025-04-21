@@ -1,9 +1,9 @@
-import { and, eq, or, SQL, sql } from 'drizzle-orm';
+import { and, eq } from 'drizzle-orm';
 import { drizzle } from 'drizzle-orm/mysql2';
 import mysql, { Connection } from 'mysql2/promise';
 
+import { prepareTransactionQuery } from '@/lib/db/helper';
 import * as schema from '@/lib/db/schema';
-import { luxon } from '@/lib/localeDate';
 import { isNumeric } from '@/lib/numberHelper';
 import { FileSummaryCreateData, TransactionCreateInterface } from '@/lib/types';
 
@@ -241,6 +241,80 @@ export class Database {
         }
     }
 
+    // --- Bank File Transactions Methods ---
+    async recordBankFileTransaction(payload: TransactionCreateInterface): Promise<schema.Transaction> {
+        console.log('Recording Bank File transaction:', payload);
+
+        try {
+            const db = await this.getDb();
+            const [res] = await db.insert(schema.bank_file_transactions).values(payload);
+
+            console.log('Bank File Transaction recorded:', { id: res.insertId });
+
+            return await this.getTransactionById(res.insertId);
+        } catch (error) {
+            console.error('Error recording Bank File transaction:', error);
+            throw error;
+        }
+    }
+
+    async checkBankFileTransactionExists(utr: string, amount: string): Promise<boolean> {
+        try {
+            const db = await this.getDb();
+
+            const query = db.select()
+                .from(schema.bank_file_transactions)
+                .where(and(
+                    eq(schema.bank_file_transactions.utr, utr),
+                    eq(schema.bank_file_transactions.amount, String(amount))
+                ))
+                .limit(1);
+
+            console.log('Generated SQL - [checkBankFileTransactionExists]: ', query.toSQL());
+
+            const result = await query;
+
+            return result.length > 0;
+        } catch (error) {
+            console.error('Error checking transaction existence:', error);
+            throw error;
+        }
+    }
+
+    async getBankFileTransactionByStatus(status: string): Promise<schema.BankFileTransaction[] | undefined> {
+        try {
+            const db = await this.getDb();
+            const query = db
+                .select()
+                .from(schema.bank_file_transactions)
+                .where(eq(schema.bank_file_transactions.status, status));
+
+            console.log('Generated SQL - [getBankFileTransactionByStatus]: ', query.toSQL());
+
+            return await query;
+        } catch (error) {
+            console.error('Error retrieving transactions:', error);
+            throw error;
+        }
+    }
+
+    async updateBankFileTransactionStatus(utr: string, status: string): Promise<void> {
+        try {
+            const db = await this.getDb();
+            const query = db
+                .update(schema.bank_file_transactions)
+                .set({ status: status } as Partial<schema.BankFileTransaction>)
+                .where(eq(schema.bank_file_transactions.utr, utr));
+
+            console.log('Generated SQL - [updateBankFileTransactionStatus]: ', query.toSQL());
+
+            await query;
+        } catch (error) {
+            console.error('Error updating bank transaction status:', error);
+            throw error;
+        }
+    }
+
     // --- File_Summaries Methods ---
 
     async createFileSummary(payload: FileSummaryCreateData): Promise<schema.FileSummary> {
@@ -305,51 +379,6 @@ export class Database {
             console.log('Database connection closed');
         }
     }
-}
-
-// Helpers
-
-function prepareTransactionQuery(
-    name: string,
-    amount: string,
-    txnDate: Date
-): {
-        nameCondition: SQL<unknown>;
-        amountCondition: SQL<unknown>;
-        dateCondition: SQL<unknown>;
-    } {
-    if (!name?.trim() || !amount || !txnDate) {
-        throw new Error('Name, Amount, and Date are required');
-    }
-
-    const date = luxon.fromJSDate(txnDate);
-
-    const previousDate = date.minus({ days: 1 });
-    const datesToCheck = [date, previousDate];
-    const patterns = datesToCheck.flatMap((dt) => {
-        const day = dt.day;
-        const month = dt.toFormat('MMM').toUpperCase();
-
-        return [
-            `${day}${month}`,
-            `${String(day).padStart(2, '0')}${month}`,
-        ];
-    });
-    const uniquePatterns = [...new Set(patterns)];
-
-    const nameCondition = sql`UPPER(
-    ${schema.transactions.accountHolderName}
-    )
-    =
-    ${name.toUpperCase()}`;
-    const amountCondition = eq(schema.transactions.amount, amount);
-    const dateCondition = or(
-        ...uniquePatterns.map((pattern) => sql`${schema.transactions.fileName}
-        LIKE
-        ${`%${pattern}%`}`)
-    );
-
-    return { nameCondition, amountCondition, dateCondition };
 }
 
 export const dbInstance = new Database();

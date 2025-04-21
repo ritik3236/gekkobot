@@ -25,12 +25,6 @@ export async function POST(req: Request): Promise<NextResponse> {
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error in webhook:', error);
-        const update: Update = await req.json();
-        const chatId: number | undefined = update?.message?.chat?.id;
-
-        if (chatId) {
-            await BulkBot.sendMessage(chatId, 'Error receiving image.');
-        }
 
         return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
     }

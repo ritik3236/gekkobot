@@ -1,4 +1,4 @@
-
+import { postProcessBankFile } from '@/lib/bulk/postProcessBankFile';
 import { postProcessBulkFile } from '@/lib/bulk/postProcessBulkFile';
 import { TelegramBot } from '@/lib/telegram/bot';
 
@@ -25,18 +25,25 @@ BulkBot.bot.on('message', async (ctx) => {
 
         await postProcessBulkFile(repliedMessage, ctx);
     }
+
+    if (ctx.chat.id === -4751668590){
+        await postProcessBankFile(ctx);
+    }
 });
 
-BulkBot.bot.on('my_chat_member', (ctx) => {
+BulkBot.bot.on('my_chat_member', async (ctx) => {
     const oldStatus = ctx.update.my_chat_member.old_chat_member.status;
     const newStatus = ctx.update.my_chat_member.new_chat_member.status;
     const chat = ctx.chat;
 
     if (oldStatus === 'left' && newStatus === 'member') {
         console.log(`✅ Bot added to group: ${chat.title}`);
+        await ctx.api.sendMessage(process.env.TELEGRAM_ADMIN_CHAT_ID, `Bulk Bot added to group: ${chat.title}`);
     } else if (oldStatus === 'member' && newStatus === 'left') {
         console.log(`❌ Bot removed from group: ${chat.title}`);
+        await ctx.api.sendMessage(process.env.TELEGRAM_ADMIN_CHAT_ID, `Bulk Bot removed from group: ${chat.title}`);
     } else {
         console.log(`Bot status changed in group: ${chat.title} | ${oldStatus} → ${newStatus}`);
+        await ctx.api.sendMessage(process.env.TELEGRAM_ADMIN_CHAT_ID, `Bulk Bot status changed in group: ${chat.title} | ${oldStatus} → ${newStatus}`);
     }
 });

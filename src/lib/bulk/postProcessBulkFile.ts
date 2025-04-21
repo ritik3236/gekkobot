@@ -1,8 +1,7 @@
 // bulkProcessor.ts
-import * as XLSX from 'xlsx';
-
 import { VerifierFactory } from '@/lib/bulk/verifiers/verifierFactory';
 import { dbInstance } from '@/lib/db/client';
+import { processExcelFile } from '@/lib/file_helper';
 import { luxon } from '@/lib/localeDate';
 import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
 import { FileDetails, VerificationResult } from '@/lib/types';
@@ -29,7 +28,8 @@ export const postProcessBulkFile = async (repliedMessage: any, ctx: any) => {
 
         if (!details.valid) return ctx.reply('❌ Invalid file metadata in caption');
 
-        const { transactions } = await processExcelFile(repliedMessage.document.file_id);
+        const fileUrl = await BulkBot.getFileUrl(repliedMessage.document.file_id);
+        const { transactions } = await processExcelFile(fileUrl);
         const verificationResult = verifyData(details, transactions);
         const dbResult = await processDatabaseOperations(details, verificationResult);
 
@@ -42,19 +42,6 @@ export const postProcessBulkFile = async (repliedMessage: any, ctx: any) => {
         await ctx.reply('⚠️ Error processing file. Please check the format and try again.');
     }
 };
-
-async function processExcelFile(fileId: string) {
-    const fileUrl = await BulkBot.getFileUrl(fileId);
-    const response = await fetch(fileUrl);
-
-    if (!response.ok) throw new Error('Failed to download file');
-
-    const workbook = XLSX.read(await response.arrayBuffer(), { type: 'array' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const transactions = XLSX.utils.sheet_to_json<any>(sheet, { header: 1 });
-
-    return { transactions };
-}
 
 function verifyData(details: FileDetails, rows: any[]) {
     const verifier = VerifierFactory.createVerifier(getFileType(rows));

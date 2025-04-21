@@ -1,6 +1,6 @@
 import { AuthService } from '@/lib/auth.service';
 import { luxon } from '@/lib/localeDate';
-import { PartnerBalance, Payout } from '@/lib/types';
+import { PartnerBalance, PayoutInterface } from '@/lib/types';
 import { escapeTelegramEntities, fnCapitalize, formatNumber } from '@/lib/utils';
 
 interface createMsgInterface {
@@ -81,9 +81,9 @@ export class PayoutService {
     }
 
     // Filter transactions for valid payout partners
-    static filterPartnerTransactions(transactions: Payout[], partner_key?: string) {
+    static filterPartnerTransactions(transactions: PayoutInterface[], partner_key?: string) {
         if (partner_key){
-            return transactions.filter((transaction) => [partner_key].includes(transaction.gateway_reference_name))
+            return transactions.filter((transaction) => [partner_key].includes(transaction.gateway_reference_name));
         }
 
         return transactions.filter((transaction) =>
@@ -92,7 +92,7 @@ export class PayoutService {
     }
 
     // Group transactions by partner name
-    static groupTransactionsByPartner(transactions: Payout[], payoutPartners: Record<string, string>) {
+    static groupTransactionsByPartner(transactions: PayoutInterface[], payoutPartners: Record<string, string>) {
         return transactions.reduce((acc, transaction) => {
             const { gateway_reference_name } = transaction;
             const partnerName = payoutPartners[gateway_reference_name];
@@ -104,11 +104,11 @@ export class PayoutService {
             acc[partnerName].push(transaction);
 
             return acc;
-        }, {} as Record<string, Payout[]>);
+        }, {} as Record<string, PayoutInterface[]>);
     }
 
     // Format individual transaction details
-    static formatTransactionDetails(transaction: Payout) {
+    static formatTransactionDetails(transaction: PayoutInterface) {
         const { tid, remote_id, amount, currency_id, state: status, created_at } = transaction;
 
         return createTextMsg([
@@ -132,7 +132,7 @@ export class PayoutService {
     }
 
     // Generate a summary for each partner
-    static generatePartnerSummary(partnerName: string, transactions: Payout[], state: string) {
+    static generatePartnerSummary(partnerName: string, transactions: PayoutInterface[], state: string) {
         const totalAmount = transactions.reduce((sum, { amount }) => sum + +amount, 0.0);
 
         return [
@@ -144,7 +144,7 @@ export class PayoutService {
     }
 
     // Generate the overall summary for all partners
-    static generateOverallSummary(partnerTransactions: Payout[], state: string) {
+    static generateOverallSummary(partnerTransactions: PayoutInterface[], state: string) {
         const totalAmount = partnerTransactions.reduce((sum, { amount }) => sum + +amount, 0);
 
         return [
@@ -224,7 +224,7 @@ export class DataPipeline {
             state: [payload.state],
             to: payload.to,
             type: 'fiat',
-        }) as { data: Payout[]; headers: { total: string } };
+        }) as { data: PayoutInterface[]; headers: { total: string } };
 
         let totalAmount = 0;
 

@@ -23,9 +23,9 @@ export class AuthService {
         };
     }
 
-    static async get(pathname: string, payload?: Record<string, any>) {
+    static async get(pathname: string, payload?: Record<string, any>, api = 'api/v2/peatio') {
         try {
-            let url = new URL(`${process.env.SERVER_HOST}/api/v2/peatio${pathname}`).toString();
+            let url = new URL(`${process.env.SERVER_HOST}/${api}${pathname}`).toString();
 
             if (payload) {
                 url += buildQueryString(payload);
@@ -46,6 +46,32 @@ export class AuthService {
             Logger.error('API Error:', error);
 
             return { error: '⚠️ Error fetching data.', data: null, headers: null };
+        }
+    }
+
+    static async patch(pathname: string, payload: Record<string, any>, api = 'api/v2/peatio') {
+        try {
+            const url = new URL(`${process.env.SERVER_HOST}/${api}${pathname}`).toString();
+
+            const req_headers = new Headers(this.getAuthHeaders());
+
+            Logger.info('API', `Patching data from ${url}`, 'API');
+
+            const res = await fetch(url.toString(), {
+                method: 'PATCH',
+                headers: req_headers,
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+            
+            if (!res.ok) throw new Error(`Request failed: ${JSON.stringify(data)}`);
+
+            return { data, headers: { total: res.headers.get('Total') }, errror: null };
+        } catch (error) {
+            Logger.error('API Error:', error);
+
+            return { error: '⚠️ Error patching data.' + error?.message || '', data: null, headers: null };
         }
     }
 }
