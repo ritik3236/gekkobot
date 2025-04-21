@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { AuthService } from '@/lib/auth.service';
 import { dbInstance } from '@/lib/db/client';
 import { BankFileTransaction } from '@/lib/db/schema';
+import { UTR_CHAT_ID, UtrBot } from '@/lib/telegram/utr-bot-instance';
 import { WithdrawInterface } from '@/lib/types';
 
 export async function POST(req: Request): Promise<Response> {
@@ -40,10 +41,13 @@ export async function POST(req: Request): Promise<Response> {
                     error: error || 'No error',
                 });
                 error?.length === 0 && await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'success');
+                await UtrBot.sendMessage(UTR_CHAT_ID, `Transaction processed successfully for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
             } else if (processableWithdraw.length > 1) {
                 errors.push(`Multiple withdraws found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
+                await UtrBot.sendMessage(UTR_CHAT_ID, `Multiple withdraws found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
             } else {
                 errors.push(`No withdraw found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
+                await UtrBot.sendMessage(UTR_CHAT_ID, `No withdraw found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
             }
         }
 
