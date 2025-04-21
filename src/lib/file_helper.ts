@@ -35,6 +35,26 @@ const fileTypeColumns = {
         'Status',
         'Error Description',
     ],
+    type_2_cnb: [
+        'Record No',
+        'Payment Type',
+        'Value Date',
+        'Amount',
+        'Beneficiary Name',
+        'Beneficiary Account Number',
+        'Benficiary Bank IFSC',
+        'Currency',
+        'RBI/UTR Reference Number',
+        'Debit Account Number',
+        'Customer Reference Number',
+        'Transaction Reference',
+        'Instrument Number',
+        'Remitter Name - Sub Member',
+        'Additional Buffer Field - Sub Member',
+        'Status',
+        'Error Description',
+    ],
+
     type_2_msme: [
         'RECORD',
         'RECORD REF NO',
@@ -54,6 +74,8 @@ export function getFileDataType(rows: any[][]) {
         return 'type_2_msme';
     } else if (rows[5]?.length === fileTypeColumns.type_1_cnb.length && rows[5].every((column) => fileTypeColumns.type_1_cnb.includes(column))) {
         return 'type_1_cnb';
+    } else if (rows[5]?.length === fileTypeColumns.type_2_cnb.length && rows[0].every((column) => fileTypeColumns.type_2_cnb.includes(column))) {
+        return 'type_2_cnb';
     } else if (tags.has('H') && tags.has('F')) {
         return 'type_3_yes_bank';
     } else {
@@ -67,6 +89,8 @@ export function getTransactionsFromFile(rows: any[][], fileName: string) {
     switch (fileType) {
         case 'type_1_cnb':
             return getType1CnbTransactions(rows, fileName);
+        case 'type_2_cnb':
+            return getType2CnbTransactions(rows, fileName);
         case 'type_2_msme':
             return;
         case 'type_3_yes_bank':
@@ -93,6 +117,36 @@ function getType1CnbTransactions(rows: any[][], fileName: string) {
             txnDate: luxon.fromFormat(row[2], 'dd/MM/yyyy').toJSDate(),
             status: 'created',
             remark: row[13] + row[14],
+            uuid: row[10],
+            bankRefundUuid: '',
+            fileName: fileName,
+        };
+
+        txns.push(txn);
+
+        console.log('txn', txn);
+    });
+
+    return txns;
+}
+
+function getType2CnbTransactions(rows: any[][], fileName: string) {
+    const txns: Partial<Transaction>[] = [];
+
+    rows.forEach((row) => {
+        if (!isNumeric(3) || !isNumeric(row[0])) return;
+
+        const txn: Partial<Transaction> = {
+            accountHolderName: row[4],
+            accountNumber: row[5],
+            amount: row[3],
+            ifscCode: row[6],
+            utr: row[8],
+            sNo: +row[0],
+            transferType: '',
+            txnDate: luxon.fromFormat(row[2], 'dd/MM/yyyy').toJSDate(),
+            status: 'created',
+            remark: row[15],
             uuid: row[10],
             bankRefundUuid: '',
             fileName: fileName,
