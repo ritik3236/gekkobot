@@ -1,4 +1,3 @@
-import { postProcessBankFile } from '@/lib/bulk/postProcessBankFile';
 import { postProcessBulkFile } from '@/lib/bulk/postProcessBulkFile';
 import { TelegramBot } from '@/lib/telegram/bot';
 
@@ -24,10 +23,6 @@ BulkBot.bot.on('message', async (ctx) => {
         const repliedMessage = ctx.msg.reply_to_message;
 
         await postProcessBulkFile(repliedMessage, ctx);
-    }
-
-    if (ctx.chat.id === -4751668590){
-        await postProcessBankFile(ctx);
     }
 });
 
