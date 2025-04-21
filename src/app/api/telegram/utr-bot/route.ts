@@ -22,6 +22,8 @@ export async function POST(req: Request): Promise<NextResponse> {
 
         await UtrBot.bot.handleUpdate(update);
 
+        console.log('Done');
+
         return NextResponse.json({ success: true });
     } catch (error) {
         console.error('Error in webhook:', error);
