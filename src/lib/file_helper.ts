@@ -122,7 +122,7 @@ function getType3YesBankTransactions(rows: any[][], fileName) {
             amount: row[16],
             ifscCode: row[7],
             utr: String(row[18]),
-            sNo: index,
+            sNo: index + 1,
             transferType: '',
             txnDate: luxon.fromFormat(row[15], 'dd/MM/yyyy').toJSDate(),
             status: 'created',
