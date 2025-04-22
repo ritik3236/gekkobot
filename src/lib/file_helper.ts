@@ -48,6 +48,16 @@ const fileTypeColumns = {
         'STATUS CODE',
         'STATUS DESCRIPTION',
     ],
+
+    type_1_universal: [
+        'Account Holder Name',
+        'Amount',
+        'Account Number',
+        'IFSC Code',
+        'UTR',
+        'Transaction Date',
+        'TID',
+    ],
 };
 
 export function getFileDataType(rows: any[][]) {
@@ -59,6 +69,8 @@ export function getFileDataType(rows: any[][]) {
         return 'type_1_cnb';
     } else if (tags.has('H') && tags.has('F')) {
         return 'type_3_yes_bank';
+    } else if (rows[0].every((column) => fileTypeColumns.type_1_universal.includes(column))) {
+        return 'type_1_universal';
     } else {
         return 'unknown';
     }
@@ -67,6 +79,8 @@ export function getFileDataType(rows: any[][]) {
 export function getTransactionsFromFile(rows: any[][], fileName: string) {
     const fileType = getFileDataType(rows);
 
+    console.log(fileType);
+
     switch (fileType) {
         case 'type_1_cnb':
             return getType1CnbTransaction(rows, fileName);
@@ -74,15 +88,56 @@ export function getTransactionsFromFile(rows: any[][], fileName: string) {
             return;
         case 'type_3_yes_bank':
             return getType3YesBankTransactions(rows, fileName);
+        case 'type_1_universal':
+            return getType1UniversalTransactions(rows, fileName);
         default:
             return;
     }
+}
+
+function getType1UniversalTransactions(rows: any[][], fileName) {
+    const txns: Partial<Transaction>[] = [];
+
+    console.log(rows);
+
+    const convertedRows = convertToKeyValue(rows, 0);
+
+    convertedRows.forEach((row, index) => {
+
+        const amount = row['Amount']?.replaceAll(',', '');
+
+        if (!isNumeric(amount) || row['UTR']?.length < 5) return;
+
+        const txn: Partial<Transaction> = {
+            accountHolderName: row['Account Holder Name'],
+            accountNumber: row['Account Number'],
+            amount: amount,
+            ifscCode: row['IFSC Code'],
+            utr: String(row['UTR']),
+            sNo: index + 1,
+            transferType: '',
+            txnDate: luxon.fromFormat(row['Transaction Date'], 'dd/MM/yyyy').toJSDate(),
+            status: 'created',
+            remark: '',
+            uuid: row['TID'],
+            bankRefundUuid: '',
+            fileName: fileName,
+        };
+
+        txns.push(txn);
+
+        console.log('txn', txn);
+    });
+
+    return txns;
 }
 
 function getType1CnbTransaction(rows: any[][], fileName) {
     const txns: Partial<Transaction>[] = [];
     const convertedRows = convertToKeyValue(rows, 5);
 
+    console.log(rows);
+    
     convertedRows.forEach((row, index) => {
         if (!isNumeric(row['Amount']) || row['RBI/UTR Reference Number']?.length < 5) return;
 
@@ -112,6 +167,8 @@ function getType1CnbTransaction(rows: any[][], fileName) {
 
 function getType3YesBankTransactions(rows: any[][], fileName) {
     const txns: Partial<Transaction>[] = [];
+
+    console.log(rows);
 
     rows.forEach((row, index) => {
         if (row[0] !== 'D' || !isNumeric(row[16]) || row[18]?.length < 5) return;

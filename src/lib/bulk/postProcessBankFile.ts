@@ -19,6 +19,12 @@ export const postProcessBankFile = async (ctx: Update) => {
 
         const transactions = getTransactionsFromFile(fileData.transactions, fileName);
 
+        if (transactions?.length === 0) {
+            await UtrBot.bot.api.sendMessage(chatId, 'No transactions found in file', { reply_to_message_id: ctx.message.message_id });
+
+            return;
+        }
+
         const { errors, count } = await createTransaction(transactions);
 
         await UtrBot.bot.api.sendMessage(chatId,
