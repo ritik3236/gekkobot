@@ -14,6 +14,8 @@ export async function POST(req: Request): Promise<Response> {
         const updatedPayouts = [];
         const errors = [];
 
+        await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, `'Total Transactions ${dbTransaction.length} to process'`, { parse_mode: 'Markdown' });
+
         for (const transaction of dbTransaction) {
             const withdrawals = await AuthService.get('/admin/withdraws', {
                 state: ['processing'],
@@ -64,6 +66,7 @@ export async function POST(req: Request): Promise<Response> {
 
                 const msg = utrProcessMsg({ ...transaction, status: '❌ No withdraw found' });
 
+                await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'not_found');
                 await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, msg, { parse_mode: 'Markdown' });
             }
         }

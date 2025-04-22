@@ -17,56 +17,25 @@ export async function processExcelFile(fileUrl: string) {
 }
 
 const fileTypeColumns = {
-    type_1_cnb: [
+    type_4_cnb: [
         'Record No',
         'Payment Type',
         'Value Date',
-        'Beneficiary Name',
         'Amount',
-        'Currency',
-        'Benficiary Bank IFSC',
+        'Beneficiary Name',
         'Beneficiary Account Number',
+        'Benficiary Bank IFSC',
+        'Currency',
         'RBI/UTR Reference Number',
         'Debit Account Number',
         'Customer Reference Number',
-        'Transaction Reference',
-        'Instrument Number',
         'Remarks',
-        'Status',
-        'Error Description',
-    ],
-    type_2_cnb: [
-        'Record No',
-        'Payment Type',
-        'Value Date',
-        'Amount',
-        'Beneficiary Name',
-        'Beneficiary Account Number',
-        'Benficiary Bank IFSC',
-        'Currency',
-        'RBI/UTR Reference Number',
-        'Debit Account Number',
-        'Customer Reference Number',
         'Transaction Reference',
         'Instrument Number',
         'Remitter Name - Sub Member',
         'Additional Buffer Field - Sub Member',
         'Status',
         'Error Description',
-    ],
-    type_3_cnb: [
-        'Record No',
-        'Value Date',
-        'Payment Type',
-        'Transaction Reference',
-        'Debit Account Number',
-        'Beneficiary Name',
-        'Beneficiary Account Number',
-        'Benficiary Bank IFSC',
-        'Amount',
-        'Currency',
-        'RBI/UTR Reference Number',
-        'Status',
     ],
 
     type_2_msme: [
@@ -86,12 +55,8 @@ export function getFileDataType(rows: any[][]) {
 
     if (rows[0]?.length === fileTypeColumns.type_2_msme.length && rows[0].every((column) => fileTypeColumns.type_2_msme.includes(column))) {
         return 'type_2_msme';
-    } else if (rows[5]?.length === fileTypeColumns.type_1_cnb.length && rows[5].every((column) => fileTypeColumns.type_1_cnb.includes(column))) {
+    } else if (rows[4]?.length === 0 && rows[0]?.[0] === 'File Transactions') {
         return 'type_1_cnb';
-    } else if (rows[5]?.length === fileTypeColumns.type_2_cnb.length && rows[5].every((column) => fileTypeColumns.type_2_cnb.includes(column))) {
-        return 'type_2_cnb';
-    } else if (rows[5]?.length === fileTypeColumns.type_3_cnb.length && rows[5].every((column) => fileTypeColumns.type_3_cnb.includes(column))) {
-        return 'type_3_cnb';
     } else if (tags.has('H') && tags.has('F')) {
         return 'type_3_yes_bank';
     } else {
@@ -104,11 +69,7 @@ export function getTransactionsFromFile(rows: any[][], fileName: string) {
 
     switch (fileType) {
         case 'type_1_cnb':
-            return getType1CnbTransactions(rows, fileName);
-        case 'type_2_cnb':
-            return getType2CnbTransactions(rows, fileName);
-        case 'type_3_cnb':
-            return getType3CnbTransactions(rows, fileName);
+            return getType1CnbTransaction(rows, fileName);
         case 'type_2_msme':
             return;
         case 'type_3_yes_bank':
@@ -118,84 +79,25 @@ export function getTransactionsFromFile(rows: any[][], fileName: string) {
     }
 }
 
-function getType1CnbTransactions(rows: any[][], fileName: string) {
+function getType1CnbTransaction(rows: any[][], fileName) {
     const txns: Partial<Transaction>[] = [];
+    const convertedRows = convertToKeyValue(rows, 5);
 
-    rows.forEach((row) => {
-        if (!isNumeric(row[4]) || !isNumeric(row[0])) return;
+    convertedRows.forEach((row, index) => {
+        if (!isNumeric(row['Amount']) || row['RBI/UTR Reference Number']?.length < 5) return;
 
         const txn: Partial<Transaction> = {
-            accountHolderName: row[3],
-            accountNumber: row[7],
-            amount: row[4],
-            ifscCode: row[6],
-            utr: row[8],
-            sNo: +row[0],
+            accountHolderName: row['Beneficiary Name'],
+            accountNumber: row['Beneficiary Account Number'],
+            amount: row['Amount'],
+            ifscCode: row['Benficiary Bank IFSC'],
+            utr: String(row['RBI/UTR Reference Number']),
+            sNo: index + 7,
             transferType: '',
-            txnDate: luxon.fromFormat(row[2], 'dd/MM/yyyy').toJSDate(),
+            txnDate: luxon.fromFormat(row['Value Date'], 'dd/MM/yyyy').toJSDate(),
             status: 'created',
-            remark: row[13] + row[14],
-            uuid: row[10],
-            bankRefundUuid: '',
-            fileName: fileName,
-        };
-
-        txns.push(txn);
-
-        console.log('txn', txn);
-    });
-
-    return txns;
-}
-
-function getType2CnbTransactions(rows: any[][], fileName: string) {
-    const txns: Partial<Transaction>[] = [];
-
-    rows.forEach((row) => {
-        if (!isNumeric(3) || !isNumeric(row[0])) return;
-
-        const txn: Partial<Transaction> = {
-            accountHolderName: row[4],
-            accountNumber: row[5],
-            amount: row[3],
-            ifscCode: row[6],
-            utr: row[8],
-            sNo: +row[0],
-            transferType: '',
-            txnDate: luxon.fromFormat(row[2], 'dd/MM/yyyy').toJSDate(),
-            status: 'created',
-            remark: row[15],
-            uuid: row[10],
-            bankRefundUuid: '',
-            fileName: fileName,
-        };
-
-        txns.push(txn);
-
-        console.log('txn', txn);
-    });
-
-    return txns;
-}
-
-function getType3CnbTransactions(rows: any[][], fileName: string) {
-    const txns: Partial<Transaction>[] = [];
-
-    rows.forEach((row) => {
-        if (!isNumeric(3) || !isNumeric(row[0])) return;
-
-        const txn: Partial<Transaction> = {
-            accountHolderName: row[5],
-            accountNumber: row[6],
-            ifscCode: row[7],
-            amount: row[8],
-            utr: row[10],
-            sNo: +row[0],
-            transferType: '',
-            txnDate: luxon.fromFormat(row[1], 'dd/MM/yyyy').toJSDate(),
-            status: 'created',
-            remark: row[11],
-            uuid: row[3],
+            remark: '',
+            uuid: row['Customer Reference Number'],
             bankRefundUuid: '',
             fileName: fileName,
         };
@@ -236,4 +138,23 @@ function getType3YesBankTransactions(rows: any[][], fileName) {
     });
 
     return txns;
+}
+
+function convertToKeyValue(rows: string[][], headerRowIndex: number): Record<string, string>[] {
+    if (rows.length <= headerRowIndex) {
+        throw new Error('Insufficient rows to extract headers.');
+    }
+
+    const headers = rows[headerRowIndex];
+    const dataRows = rows.slice(headerRowIndex + 1);
+
+    return dataRows.map((row) => {
+        const record: Record<string, string> = {};
+
+        headers.forEach((key, index) => {
+            record[key.trim()] = row[index]?.trim() ?? '';
+        });
+
+        return record;
+    });
 }

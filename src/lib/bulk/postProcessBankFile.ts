@@ -7,7 +7,7 @@ import { UtrBot } from '@/lib/telegram/utr-bot-instance';
 
 export const postProcessBankFile = async (ctx: Update) => {
 
-    console.log('IN COMMAND', ctx);
+    console.log('Started postProcessBankFile', ctx);
     const chatId = ctx.message.chat.id;
 
     try {
@@ -19,11 +19,12 @@ export const postProcessBankFile = async (ctx: Update) => {
 
         const transactions = getTransactionsFromFile(fileData.transactions, fileName);
 
-        const { errors } = await createTransaction(transactions);
+        const { errors, count } = await createTransaction(transactions);
 
         await UtrBot.bot.api.sendMessage(chatId,
-            'Transaction Recorded. CronJob will be picking soon 🔜' +
-            '\n```Errors\n' + errors.join('\n') + '```',
+            count > 0 ? 'Transaction Recorded. CronJob will be picking soon 🔜' : '' +
+                '\nTransaction Added `' + count + '`' +
+                '\n```Errors\n' + errors.join('\n') + '```',
             { reply_to_message_id: ctx.message.message_id, parse_mode: 'Markdown' }
         );
     } catch (e) {
@@ -35,6 +36,7 @@ export const postProcessBankFile = async (ctx: Update) => {
 
 const createTransaction = async (transactions: Partial<Transaction>[]) => {
     const errors = [];
+    let count = 0;
 
     await dbInstance.initialize();
     const transactionChecks = transactions.map(async (tx) => {
@@ -44,10 +46,11 @@ const createTransaction = async (transactions: Partial<Transaction>[]) => {
             errors.push(`Duplicate transaction found: UTR ${tx.utr} with amount ${tx.amount}`);
         } else {
             await dbInstance.recordBankFileTransaction(tx as any);
+            count++;
         }
     });
 
     await Promise.all(transactionChecks);
 
-    return { errors };
+    return { errors, count };
 };
