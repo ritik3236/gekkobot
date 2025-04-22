@@ -116,7 +116,7 @@ function getType1UniversalTransactions(rows: any[][], fileName) {
             utr: String(row['UTR']),
             sNo: index + 1,
             transferType: '',
-            txnDate: luxon.fromFormat(row['Transaction Date'], 'dd/MM/yyyy').toJSDate(),
+            txnDate: row['Transaction Date'] ? luxon.fromFormat(row['Transaction Date'], 'dd/MM/yyyy').toJSDate() : null,
             status: 'created',
             remark: '',
             uuid: row['TID'],
@@ -137,7 +137,7 @@ function getType1CnbTransaction(rows: any[][], fileName) {
     const convertedRows = convertToKeyValue(rows, 5);
 
     console.log(rows);
-    
+
     convertedRows.forEach((row, index) => {
         if (!isNumeric(row['Amount']) || row['RBI/UTR Reference Number']?.length < 5) return;
 
@@ -149,7 +149,7 @@ function getType1CnbTransaction(rows: any[][], fileName) {
             utr: String(row['RBI/UTR Reference Number']),
             sNo: index + 1,
             transferType: '',
-            txnDate: luxon.fromFormat(row['Value Date'], 'dd/MM/yyyy').toJSDate(),
+            txnDate: row['Value Date'] ? luxon.fromFormat(row['Value Date'], 'dd/MM/yyyy').toJSDate(): null,
             status: 'created',
             remark: '',
             uuid: row['Customer Reference Number'],
@@ -181,7 +181,7 @@ function getType3YesBankTransactions(rows: any[][], fileName) {
             utr: String(row[18]),
             sNo: index + 1,
             transferType: '',
-            txnDate: luxon.fromFormat(row[15], 'dd/MM/yyyy').toJSDate(),
+            txnDate: row[15] ? luxon.fromFormat(row[15], 'dd/MM/yyyy').toJSDate(): null,
             status: 'created',
             remark: '',
             uuid: row[14],

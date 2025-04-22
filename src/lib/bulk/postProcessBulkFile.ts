@@ -88,7 +88,7 @@ async function bulkInsertTransactions(details: FileDetails, transactions: any[])
         const payload = {
             uuid: transaction.tid,
             amount: transaction.amount,
-            createdAt: luxon.fromFormat(transaction.createdAt, 'dd/MM/yyyy').toJSDate(),
+            createdAt: transaction.createdAt ? luxon.fromFormat(transaction.createdAt, 'dd/MM/yyyy').toJSDate(): null,
             ifscCode: transaction.ifscCode,
             accountNumber: transaction.accountNumber,
             accountHolderName: transaction.accountHolderName,
