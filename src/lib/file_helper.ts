@@ -92,7 +92,7 @@ function getType1CnbTransaction(rows: any[][], fileName) {
             amount: row['Amount'],
             ifscCode: row['Benficiary Bank IFSC'],
             utr: String(row['RBI/UTR Reference Number']),
-            sNo: index + 7,
+            sNo: index + 1,
             transferType: '',
             txnDate: luxon.fromFormat(row['Value Date'], 'dd/MM/yyyy').toJSDate(),
             status: 'created',
