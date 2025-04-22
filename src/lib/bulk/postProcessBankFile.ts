@@ -22,9 +22,9 @@ export const postProcessBankFile = async (ctx: Update) => {
         const { errors, count } = await createTransaction(transactions);
 
         await UtrBot.bot.api.sendMessage(chatId,
-            count > 0 ? 'Transaction Recorded. CronJob will be picking soon 🔜' : '' +
-                '\nTransaction Added `' + count + '`' +
-                '\n```Errors\n' + errors.join('\n') + '```',
+            'Transaction Recorded. CronJob will be picking soon 🔜' +
+            '\nTransaction Added `' + count + '`' +
+            '\n```Errors\n' + errors.join('\n') + '```',
             { reply_to_message_id: ctx.message.message_id, parse_mode: 'Markdown' }
         );
     } catch (e) {
