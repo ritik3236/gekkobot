@@ -64,10 +64,7 @@ export async function POST(req: Request): Promise<Response> {
             } else {
                 errors.push(`No withdraw found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
 
-                const msg = utrProcessMsg({ ...transaction, status: '❌ No withdraw found' });
-
                 await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'not_found');
-                await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, msg, { parse_mode: 'Markdown' });
             }
         }
 
