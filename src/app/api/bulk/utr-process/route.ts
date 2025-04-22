@@ -14,6 +14,10 @@ export async function POST(req: Request): Promise<Response> {
         const updatedPayouts = [];
         const errors = [];
 
+        if (dbTransaction.length === 0) {
+            return NextResponse.json({ success: true });
+        }
+
         await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, `'Total Transactions ${dbTransaction.length} to process'`, { parse_mode: 'Markdown' });
 
         for (const transaction of dbTransaction) {
