@@ -113,16 +113,18 @@ const getAndSetPayoutRequest = async (payload, _transaction: Transaction) => {
             return { error };
         }
 
-        const success_data = await AuthService.patch(`/admin/payout_requests/${payoutRequest.data[0].id}/action`, {
-            id: payoutRequest.data[0].id,
-            action: 'success',
-            txid: payload.utr,
-            comment: 'success action from telegram Bot',
-        }, 'api/v3/peatio');
+        setTimeout(async () => {
+            const success_data = await AuthService.patch(`/admin/payout_requests/${payoutRequest.data[0].id}/action`, {
+                id: payoutRequest.data[0].id,
+                action: 'success',
+                txid: payload.utr,
+                comment: 'success action from telegram Bot',
+            }, 'api/v3/peatio');
 
-        if (success_data.error) {
-            error.push('Error success payout request: ' + success_data.error);
-        }
+            if (success_data.error) {
+                error.push('Error success payout request: ' + success_data.error);
+            }
+        }, 500);
     }
 
     return { error };
