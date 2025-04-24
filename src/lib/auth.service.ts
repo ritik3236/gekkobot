@@ -55,7 +55,7 @@ export class AuthService {
 
             const req_headers = new Headers(this.getAuthHeaders());
 
-            Logger.info('API', `Patching data from ${url}`, 'API');
+            Logger.info('API', `Patching data from ${url}`, 'Payload: ', payload);
 
             const res = await fetch(url.toString(), {
                 method: 'PATCH',

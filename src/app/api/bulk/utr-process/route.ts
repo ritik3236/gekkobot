@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 
 import { AuthService } from '@/lib/auth.service';
 import { dbInstance } from '@/lib/db/client';
-import { BankFileTransaction } from '@/lib/db/schema';
+import { BankFileTransaction, Transaction } from '@/lib/db/schema';
 import { utrProcessMsg } from '@/lib/telegram/messageBulider';
 import { UTR_CHAT_ID, UtrBot } from '@/lib/telegram/utr-bot-instance';
 import { WithdrawInterface } from '@/lib/types';
@@ -40,7 +40,7 @@ export async function POST(req: Request): Promise<Response> {
                 const { error } = await getAndSetPayoutRequest({
                     tid: processableWithdraw[0].tid,
                     utr: transaction.utr,
-                });
+                }, transaction);
 
                 updatedPayouts.push({
                     tid: processableWithdraw[0].tid,
@@ -64,7 +64,8 @@ export async function POST(req: Request): Promise<Response> {
 
                 const msg = utrProcessMsg({ ...transaction, status: '❌ Multiple withdraws found' });
 
-                await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, msg);
+                await dbInstance.updateBankFileTransactionStatus(transaction.utr, 'duplicate');
+                await UtrBot.bot.api.sendMessage(UTR_CHAT_ID, msg, { parse_mode: 'Markdown' });
             } else {
                 errors.push(`No withdraw found for Account ${transaction.accountNumber} with amount ${transaction.amount}`);
 
@@ -86,7 +87,7 @@ const checkWithdrawExistInDb = (txn: BankFileTransaction, withdraw: WithdrawInte
         && txn.ifscCode === withdraw.beneficiary?.data?.bank_ifsc_code;
 };
 
-const getAndSetPayoutRequest = async (payload) => {
+const getAndSetPayoutRequest = async (payload, _transaction: Transaction) => {
     const error = [];
     const payoutRequest = await AuthService.get('/admin/payout_requests', {
         tid: payload.tid,
@@ -104,6 +105,12 @@ const getAndSetPayoutRequest = async (payload) => {
             if (confirm_data.error) {
                 error.push('Error confirming payout request: ' + confirm_data.error);
             }
+        }
+
+        if (payload.utr?.length < 5) {
+            error.push(`UTR Invalid ${payload.utr}`);
+
+            return { error };
         }
 
         const success_data = await AuthService.patch(`/admin/payout_requests/${payoutRequest.data[0].id}/action`, {

@@ -7,8 +7,7 @@ import { BulkBot } from '@/lib/telegram/bot-bulk-instance';
 import { buildBulkPayoutPreProcessMsg } from '@/lib/telegram/messageBulider';
 import { BulkPayoutInterface } from '@/lib/types';
 
-const TestChatId = '1282110140';
-const CHAT_ID = process.env.BULK_FILE_GROUP_ID || TestChatId;
+const CHAT_ID = process.env.BULK_FILE_GROUP_ID || process.env.TELEGRAM_BULK_FILE_GROUP_ID_TEST;
 
 interface BulkPayoutResponse {
     data: BulkPayoutInterface;
@@ -30,7 +29,7 @@ export async function POST(req: Request): Promise<Response> {
 
         // check if origin come from test server
         if (['pay.coinfinacle.com', 'localhost'].includes(hostname)) {
-            chat_id = TestChatId;
+            chat_id = process.env.TELEGRAM_BULK_FILE_GROUP_ID_TEST;
         }
 
         // Fetch the file as binary data (arraybuffer) instead of stream
