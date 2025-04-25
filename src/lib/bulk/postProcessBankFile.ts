@@ -6,8 +6,6 @@ import { getTransactionsFromFile, processExcelFile } from '@/lib/file_helper';
 import { UtrBot } from '@/lib/telegram/utr-bot-instance';
 
 export const postProcessBankFile = async (ctx: Update) => {
-
-    console.log('Started postProcessBankFile', ctx);
     const chatId = ctx.message.chat.id;
 
     try {
@@ -18,6 +16,12 @@ export const postProcessBankFile = async (ctx: Update) => {
         const fileData = await processExcelFile(fileUrl);
 
         const transactions = getTransactionsFromFile(fileData.transactions, fileName);
+
+        if (!transactions) {
+            await UtrBot.bot.api.sendMessage(chatId, 'unknown file type', { reply_to_message_id: ctx.message.message_id });
+
+            return;
+        }
 
         if (transactions?.length === 0) {
             await UtrBot.bot.api.sendMessage(chatId, 'No transactions found in file', { reply_to_message_id: ctx.message.message_id });
