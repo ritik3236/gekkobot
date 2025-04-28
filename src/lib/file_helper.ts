@@ -237,13 +237,13 @@ function validateTransaction(txn: Partial<Transaction>): Partial<Transaction> {
     if (!isNumeric(txn.amount)) {
         errors.push('invalid amount');
     }
-    if (!txn.accountHolderName || txn.accountHolderName.length < 5) {
+    if (!txn.accountHolderName || txn.accountHolderName.length < 2) {
         errors.push('invalid account holder name');
     }
-    if (!txn.accountNumber || txn.accountNumber?.length < 5) {
+    if (!txn.accountNumber || txn.accountNumber?.length < 2) {
         errors.push('invalid account number');
     }
-    if (!txn.ifscCode || txn.ifscCode?.length < 5) {
+    if (!txn.ifscCode || txn.ifscCode?.length < 2) {
         errors.push('invalid ifsc_code');
     }
     if (!txn.utr || txn.utr == 'undefined' || txn.utr.length < 5) {
