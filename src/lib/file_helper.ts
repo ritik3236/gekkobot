@@ -238,11 +238,19 @@ function validateTransaction(txn: Partial<Transaction>): Partial<Transaction> {
 function formatDate(date: string) {
     const formats = ['d/M/yyyy', 'd/M/yy', 'dd/MM/yyyy', 'dd/MM/yy'];
 
-    for (const fmt of formats) {
-        const dt = luxon.fromFormat(date, fmt);
+    try {
+        if (!date) return null;
 
-        if (dt.isValid) return dt.toJSDate();
+        for (const fmt of formats) {
+            const dt = luxon.fromFormat(date, fmt);
+
+            if (dt.isValid) return dt.toJSDate();
+        }
+
+        return null;
+    } catch (e) {
+        console.error(e);
+
+        return null;
     }
-
-    return null;
 }
