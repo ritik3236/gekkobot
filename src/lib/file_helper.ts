@@ -178,7 +178,7 @@ function getType3YesBankTransactions(rows: any[][], fileName) {
             sNo: sNo,
             status: 'created',
             transferType: '',
-            txnDate:formatDate(row[15]),
+            txnDate: formatDate(row[15]),
             utr: String(row[18]),
             uuid: row[14],
         };
@@ -236,12 +236,13 @@ function validateTransaction(txn: Partial<Transaction>): Partial<Transaction> {
 }
 
 function formatDate(date: string) {
-    let dt = luxon.fromFormat(date, 'dd/MM/yyyy');
+    const formats = ['d/M/yyyy', 'd/M/yy', 'dd/MM/yyyy', 'dd/MM/yy'];
 
-    if (dt.isValid) return dt.toJSDate();
+    for (const fmt of formats) {
+        const dt = luxon.fromFormat(date, fmt);
 
-    dt = luxon.fromFormat(date, 'dd/MM/yy');
-    if (dt.isValid) return dt.toJSDate();
+        if (dt.isValid) return dt.toJSDate();
+    }
 
     return null;
 }
