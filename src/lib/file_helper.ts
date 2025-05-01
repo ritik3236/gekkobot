@@ -17,27 +17,6 @@ export async function processExcelFile(fileUrl: string) {
 }
 
 const fileTypeColumns = {
-    type_4_cnb: [
-        'Record No',
-        'Payment Type',
-        'Value Date',
-        'Amount',
-        'Beneficiary Name',
-        'Beneficiary Account Number',
-        'Benficiary Bank IFSC',
-        'Currency',
-        'RBI/UTR Reference Number',
-        'Debit Account Number',
-        'Customer Reference Number',
-        'Remarks',
-        'Transaction Reference',
-        'Instrument Number',
-        'Remitter Name - Sub Member',
-        'Additional Buffer Field - Sub Member',
-        'Status',
-        'Error Description',
-    ],
-
     type_2_msme: [
         'RECORD',
         'E-BANKING REF NO',
@@ -140,7 +119,7 @@ function getType1UniversalTransactions(rows: any[][], fileName) {
             sNo: index + 1,
             status: 'created',
             transferType: '',
-            txnDate: row['Transaction Date'] ? luxon.fromFormat(row['Transaction Date'], 'dd/MM/yyyy').toJSDate() : null,
+            txnDate: formatDate(row['Transaction Date']),
             utr: String(row['UTR']),
             uuid: row['TID'],
         };
@@ -167,7 +146,7 @@ function getType1CnbTransaction(rows: any[][], fileName) {
             sNo: index + 1,
             status: 'created',
             transferType: '',
-            txnDate: row['Value Date'] ? luxon.fromFormat(row['Value Date'], 'dd/MM/yyyy').toJSDate() : null,
+            txnDate: formatDate(row['Value Date']),
             utr: String(row['RBI/UTR Reference Number']),
             uuid: row['Customer Reference Number'],
         };
@@ -199,7 +178,7 @@ function getType3YesBankTransactions(rows: any[][], fileName) {
             sNo: sNo,
             status: 'created',
             transferType: '',
-            txnDate: row[15] ? luxon.fromFormat(row[15], 'dd/MM/yyyy').toJSDate() : null,
+            txnDate:formatDate(row[15]),
             utr: String(row[18]),
             uuid: row[14],
         };
@@ -254,4 +233,15 @@ function validateTransaction(txn: Partial<Transaction>): Partial<Transaction> {
     } else {
         return txn;
     }
+}
+
+function formatDate(date: string) {
+    let dt = luxon.fromFormat(date, 'dd/MM/yyyy');
+
+    if (dt.isValid) return dt.toJSDate();
+
+    dt = luxon.fromFormat(date, 'dd/MM/yy');
+    if (dt.isValid) return dt.toJSDate();
+
+    return null;
 }
