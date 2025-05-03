@@ -1,3 +1,5 @@
+import { luxon } from '@/lib/localeDate';
+
 export const fnCapitalize = (str: string) => {
     return str ? (str.split(/[_-]/).map((s) => s.charAt(0).toUpperCase() + s.slice(1)).join(' ')) : '';
 };
@@ -69,3 +71,10 @@ export const escapeTelegramEntities = (message: string | number) => {
 
     return escapedMessage.toString();
 };
+
+export function generateCustomUUID(prefix = 'ID') {
+    const timestamp = luxon.now().toFormat('yyyyLLdd\'T\'HHmmssSSS');
+    const random = Math.random().toString(36).slice(2, 8).toUpperCase();
+
+    return `${prefix}-${timestamp}-${random}`;
+}

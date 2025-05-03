@@ -5,7 +5,7 @@ import { BankRefund, Transaction } from '@/lib/db/schema';
 import { OCRBot } from '@/lib/telegram/bot-ocr-instance';
 import { buildRefundMsg, buildTransactionMsg } from '@/lib/telegram/messageBulider';
 import { RefundOCRFields, RefundRequest } from '@/lib/types';
-import { escapeTelegramEntities } from '@/lib/utils';
+import { escapeTelegramEntities, generateCustomUUID } from '@/lib/utils';
 
 const REFUND_STATUS = 'REFUND_IN_REVIEW';
 
@@ -103,6 +103,17 @@ export async function processImageInBackground(chatId: number, fileId: string, c
 
         if (!isOcrValid(ocrText, fields)) {
             console.error('Invalid OCR data:', ocrData);
+            const payload: RefundRequest = {
+                amount: null,
+                fileUrl: null,
+                name: null,
+                ocrText: ocrText,
+                refundUtr: null,
+                txnDate: null,
+                uuid: generateCustomUUID('ID-INVALID'),
+            };
+
+            await recordRefund(payload);
             await ctx.api.editMessageText(chatId, messageId, 'Invalid OCR data\n```' + ocrText + '\n Invalid data```', { parse_mode: 'MarkdownV2' });
 
             return;
