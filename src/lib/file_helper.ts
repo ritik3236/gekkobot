@@ -92,7 +92,7 @@ function getType2MsmeTransactions(rows: any[][], fileName: string) {
             transferType: '',
             txnDate: null,
             utr: txid,
-            uuid: '',
+            uuid: record[7],
         };
 
         txns.push(validateTransaction(txn));
