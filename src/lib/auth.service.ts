@@ -74,4 +74,30 @@ export class AuthService {
             return { error: '⚠️ Error patching data.' + error?.message || '', data: null, headers: null };
         }
     }
+
+    static async post(pathname: string, payload: Record<string, any>, api = 'api/v2/peatio') {
+        try {
+            const url = new URL(`${process.env.SERVER_HOST}/${api}${pathname}`).toString();
+
+            const req_headers = new Headers(this.getAuthHeaders());
+
+            Logger.info('API', `Posting data from ${url}`, 'Payload: ', payload);
+
+            const res = await fetch(url.toString(), {
+                method: 'POST',
+                headers: req_headers,
+                body: JSON.stringify(payload),
+            });
+
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(`Request failed: ${JSON.stringify(data)}`);
+
+            return { data, headers: { total: res.headers.get('Total') }, error: null };
+        } catch (error) {
+            Logger.error('API Error:', error);
+
+            return { error: '⚠️ Error Posting data.' + error?.message || '', data: null, headers: null };
+        }
+    }
 }

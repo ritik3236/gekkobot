@@ -1,3 +1,4 @@
+import { UpdateResult } from '@/app/api/otc-deal/route';
 import { BankFileTransaction, BankRefund, Transaction } from '@/lib/db/schema';
 import { localeDate } from '@/lib/localeDate';
 import { BulkPayoutInterface } from '@/lib/types';
@@ -100,4 +101,27 @@ export const utrProcessMsg = (payload: Partial<BankFileTransaction>) => {
 
     return '```' + payload.accountNumber + '```\n' +
         '```Transaction_Details:\n' + txnMsg + '```';   
+};
+
+export const buildOtcUpdateMsg = (result: UpdateResult) => {
+    if (!result) {
+        return '\nOtc update details not found';
+    }
+
+    const updateMsg = buildMessagePayload({
+        'Old Deal Id': result.dealId,
+        'Old Price': escapeTelegramEntities(formatNumber(result.oldPrice, {
+            style: 'currency',
+            currency: 'INR',
+        }) || '-'),
+        'New Deal Id': result.newDealId || '-',
+        'New Price': escapeTelegramEntities(formatNumber(result.newPrice, {
+            style: 'currency',
+            currency: 'INR',
+        }) || '-'),
+        'Action': escapeTelegramEntities(result.action),
+        'Message': escapeTelegramEntities(result.reason),
+    });
+
+    return '```Otc_Update_Details:\n' + updateMsg + '```';
 };
